@@ -53,8 +53,12 @@ const Login = () => {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
         <Card className="w-full max-w-md shadow-xl border-0">
           <CardHeader className="text-center pb-6">
-            <div className="mx-auto mb-4 w-16 h-16 goodpass-gradient rounded-2xl flex items-center justify-center">
-              <span className="text-white font-bold text-2xl">GP</span>
+            <div className="mx-auto mb-4 w-16 h-16 flex items-center justify-center">
+              <img 
+                src="/lovable-uploads/a05eee5d-4990-41a8-9e2d-10b8fd74349a.png" 
+                alt="Goodpass Logo" 
+                className="w-12 h-12 object-contain"
+              />
             </div>
             <CardTitle className="text-2xl font-bold text-gray-900">Reset Password</CardTitle>
             <CardDescription className="text-gray-600">
@@ -108,8 +112,12 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <Card className="w-full max-w-md shadow-xl border-0">
         <CardHeader className="text-center pb-6">
-          <div className="mx-auto mb-4 w-16 h-16 goodpass-gradient rounded-2xl flex items-center justify-center">
-            <span className="text-white font-bold text-2xl">GP</span>
+          <div className="mx-auto mb-4 w-16 h-16 flex items-center justify-center">
+            <img 
+              src="/lovable-uploads/a05eee5d-4990-41a8-9e2d-10b8fd74349a.png" 
+              alt="Goodpass Logo" 
+              className="w-12 h-12 object-contain"
+            />
           </div>
           <CardTitle className="text-2xl font-bold text-gray-900">Goodpass Backoffice</CardTitle>
           <CardDescription className="text-gray-600">
