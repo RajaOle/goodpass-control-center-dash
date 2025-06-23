@@ -30,6 +30,14 @@ import {
 
 const menuItems = [
   {
+    title: "Dashboard",
+    icon: BarChart3,
+    url: "/dashboard",
+    items: [
+      { title: "Overview", url: "/dashboard" },
+    ]
+  },
+  {
     title: "Analytics",
     icon: BarChart3,
     url: "/dashboard/analytics",
@@ -117,26 +125,29 @@ function AppSidebar() {
   const location = useLocation();
 
   const handleLogout = () => {
-    // Simulate logout - in real app this would clear auth state
     navigate('/');
   };
 
   return (
-    <Sidebar>
-      <SidebarHeader className="border-b">
-        <div className="flex items-center gap-2 px-4 py-2">
-          <img 
-            src="/lovable-uploads/a05eee5d-4990-41a8-9e2d-10b8fd74349a.png" 
-            alt="Goodpass Logo" 
-            className="w-8 h-8 object-contain"
-          />
-          <span className="font-semibold text-lg">Goodpass</span>
+    <Sidebar className="border-r border-slate-200 bg-slate-50">
+      <SidebarHeader className="border-b border-slate-200 bg-white">
+        <div className="flex items-center gap-3 px-4 py-4">
+          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+            <img 
+              src="/lovable-uploads/a05eee5d-4990-41a8-9e2d-10b8fd74349a.png" 
+              alt="Goodpass Logo" 
+              className="w-5 h-5 object-contain filter brightness-0 invert"
+            />
+          </div>
+          <span className="font-bold text-lg text-slate-800">Goodpass</span>
         </div>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="bg-slate-50">
         {menuItems.map((section) => (
           <SidebarGroup key={section.title}>
-            <SidebarGroupLabel>{section.title}</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-slate-600 font-medium text-xs uppercase tracking-wider px-4 py-2">
+              {section.title}
+            </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {section.items.map((item) => (
@@ -144,13 +155,14 @@ function AppSidebar() {
                     <SidebarMenuButton 
                       asChild 
                       isActive={location.pathname === item.url}
+                      className="mx-2 rounded-lg hover:bg-white hover:shadow-sm transition-all duration-200"
                     >
                       <button
                         onClick={() => navigate(item.url)}
-                        className="flex items-center gap-2 w-full text-left"
+                        className="flex items-center gap-3 w-full text-left px-3 py-2 text-slate-700 hover:text-slate-900"
                       >
                         {section.items[0] === item && <section.icon className="w-4 h-4" />}
-                        <span>{item.title}</span>
+                        <span className="text-sm font-medium">{item.title}</span>
                       </button>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -160,14 +172,14 @@ function AppSidebar() {
           </SidebarGroup>
         ))}
       </SidebarContent>
-      <SidebarFooter className="border-t">
+      <SidebarFooter className="border-t border-slate-200 bg-white">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
               <Button 
                 variant="ghost" 
                 onClick={handleLogout}
-                className="w-full justify-start"
+                className="w-full justify-start mx-2 rounded-lg hover:bg-slate-100 text-slate-700"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Logout</span>
@@ -183,18 +195,18 @@ function AppSidebar() {
 export default function DashboardLayout() {
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
+      <div className="min-h-screen flex w-full bg-slate-50">
         <AppSidebar />
         <main className="flex-1 flex flex-col">
-          <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="flex h-14 items-center px-4">
-              <SidebarTrigger />
+          <header className="border-b border-slate-200 bg-white shadow-sm">
+            <div className="flex h-16 items-center px-6">
+              <SidebarTrigger className="text-slate-600 hover:text-slate-900" />
               <div className="ml-4">
-                <h1 className="font-semibold">Goodpass Backoffice</h1>
+                <h1 className="font-semibold text-slate-800">Goodpass Backoffice</h1>
               </div>
             </div>
           </header>
-          <div className="flex-1 p-6">
+          <div className="flex-1">
             <Outlet />
           </div>
         </main>
