@@ -1,12 +1,9 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-
 const Moderation = () => {
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Manage Report</h2>
         <p className="text-muted-foreground">
@@ -17,7 +14,7 @@ const Moderation = () => {
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Pending Reviews</CardTitle>
+            <CardTitle className="text-lg">Pending Reports</CardTitle>
             <CardDescription>Content awaiting moderation</CardDescription>
           </CardHeader>
           <CardContent>
@@ -55,8 +52,7 @@ const Moderation = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {[1, 2, 3].map((item) => (
-              <div key={item} className="flex items-center justify-between p-4 border rounded-lg">
+            {[1, 2, 3].map(item => <div key={item} className="flex items-center justify-between p-4 border rounded-lg">
                 <div>
                   <p className="font-medium">Report #{item}</p>
                   <p className="text-sm text-muted-foreground">Flagged for inappropriate content</p>
@@ -66,13 +62,10 @@ const Moderation = () => {
                   <Button size="sm" variant="outline">Review</Button>
                   <Button size="sm">Approve</Button>
                 </div>
-              </div>
-            ))}
+              </div>)}
           </div>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 };
-
 export default Moderation;
