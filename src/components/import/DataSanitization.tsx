@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Bot, CheckCircle, AlertTriangle, Trash2, Wand2 } from 'lucide-react';
+import { Bot, CheckCircle, AlertTriangle, Trash2, Wand2, ArrowRight } from 'lucide-react';
 import type { ImportData } from '@/pages/ImportReport';
 
 interface SanitizationRule {
@@ -32,6 +32,7 @@ const DataSanitization: React.FC<DataSanitizationProps> = ({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [sanitizationRules, setSanitizationRules] = useState<SanitizationRule[]>([]);
   const [sanitizedData, setSanitizedData] = useState<any[]>([]);
+  const [isApplying, setIsApplying] = useState(false);
 
   useEffect(() => {
     if (importData.mappedData.length > 0 && sanitizationRules.length === 0) {
@@ -199,57 +200,63 @@ const DataSanitization: React.FC<DataSanitizationProps> = ({
   };
 
   const applySanitization = () => {
-    let cleaned = [...importData.mappedData];
-    const appliedRules = sanitizationRules.filter(rule => rule.applied);
+    setIsApplying(true);
     
-    appliedRules.forEach(rule => {
-      switch (rule.id) {
-        case 'phone-format':
-          cleaned = cleaned.map(row => ({
-            ...row,
-            reporterPhone: formatPhone(row.reporterPhone || ''),
-            reporteePhone: formatPhone(row.reporteePhone || '')
-          }));
-          break;
-          
-        case 'amount-format':
-          cleaned = cleaned.map(row => ({
-            ...row,
-            initialAmount: cleanAmount(row.initialAmount || ''),
-            outstandingAmount: cleanAmount(row.outstandingAmount || '')
-          }));
-          break;
-          
-        case 'remove-duplicates':
-          const seen = new Set();
-          cleaned = cleaned.filter(row => {
-            const key = `${row.reporterName}-${row.reporteeName}`;
-            if (seen.has(key)) return false;
-            seen.add(key);
-            return true;
-          });
-          break;
-          
-        case 'repayment-standardization':
-          cleaned = cleaned.map(row => ({
-            ...row,
-            repaymentType: standardizeRepaymentType(row.repaymentType || '')
-          }));
-          break;
-      }
-    });
+    setTimeout(() => {
+      let cleaned = [...importData.mappedData];
+      const appliedRules = sanitizationRules.filter(rule => rule.applied);
+      
+      appliedRules.forEach(rule => {
+        switch (rule.id) {
+          case 'phone-format':
+            cleaned = cleaned.map(row => ({
+              ...row,
+              reporterPhone: formatPhone(row.reporterPhone || ''),
+              reporteePhone: formatPhone(row.reporteePhone || '')
+            }));
+            break;
+            
+          case 'amount-format':
+            cleaned = cleaned.map(row => ({
+              ...row,
+              initialAmount: cleanAmount(row.initialAmount || ''),
+              outstandingAmount: cleanAmount(row.outstandingAmount || '')
+            }));
+            break;
+            
+          case 'remove-duplicates':
+            const seen = new Set();
+            cleaned = cleaned.filter(row => {
+              const key = `${row.reporterName}-${row.reporteeName}`;
+              if (seen.has(key)) return false;
+              seen.add(key);
+              return true;
+            });
+            break;
+            
+          case 'repayment-standardization':
+            cleaned = cleaned.map(row => ({
+              ...row,
+              repaymentType: standardizeRepaymentType(row.repaymentType || '')
+            }));
+            break;
+        }
+      });
 
-    setSanitizedData(cleaned);
-    onDataChange({
-      ...importData,
-      sanitizedData: cleaned,
-      sanitizationRules: appliedRules
-    });
+      setSanitizedData(cleaned);
+      onDataChange({
+        ...importData,
+        sanitizedData: cleaned,
+        sanitizationRules: appliedRules
+      });
 
-    toast({
-      title: "Data Sanitization Complete",
-      description: `Processed ${cleaned.length} records with ${appliedRules.length} rules applied`,
-    });
+      setIsApplying(false);
+
+      toast({
+        title: "Data Sanitization Complete",
+        description: `Processed ${cleaned.length} records with ${appliedRules.length} rules applied. Ready for final import!`,
+      });
+    }, 2000);
   };
 
   const formatPhone = (phone: string): string => {
@@ -299,8 +306,53 @@ const DataSanitization: React.FC<DataSanitizationProps> = ({
     }
   };
 
+  const canProceed = sanitizedData.length > 0;
+  const hasAppliedRules = sanitizationRules.some(rule => rule.applied);
+
   return (
     <div className="space-y-6">
+      {/* Progress Status Card */}
+      <Card className={`border-2 ${canProceed ? 'border-green-200 bg-green-50' : 'border-blue-200 bg-blue-50'}`}>
+        <CardContent className="pt-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="font-semibold text-lg">Step 3 Progress</h3>
+              <p className="text-sm text-muted-foreground">
+                {canProceed ? 'Data sanitization complete' : 'Review and apply sanitization rules'}
+              </p>
+            </div>
+            {canProceed && (
+              <div className="flex items-center text-green-600">
+                <CheckCircle className="w-5 h-5 mr-2" />
+                <span className="font-medium">Ready to proceed</span>
+              </div>
+            )}
+          </div>
+          
+          {hasAppliedRules && !canProceed && (
+            <Button
+              onClick={applySanitization}
+              disabled={isApplying}
+              size="lg"
+              className="w-full bg-blue-600 hover:bg-blue-700"
+            >
+              {isApplying ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Processing Data...
+                </>
+              ) : (
+                <>
+                  <Wand2 className="w-4 h-4 mr-2" />
+                  Apply Sanitization Rules
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </>
+              )}
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -329,20 +381,16 @@ const DataSanitization: React.FC<DataSanitizationProps> = ({
                   </p>
                 </div>
                 <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={applyAllAutoFixes}
-                    className="flex items-center gap-2"
-                  >
-                    <Wand2 className="w-4 h-4" />
-                    Apply All Auto-fixes
-                  </Button>
-                  <Button
-                    onClick={applySanitization}
-                    disabled={!sanitizationRules.some(rule => rule.applied)}
-                  >
-                    Apply Sanitization
-                  </Button>
+                  {sanitizationRules.filter(rule => rule.autoFix).length > 0 && (
+                    <Button
+                      variant="outline"
+                      onClick={applyAllAutoFixes}
+                      className="flex items-center gap-2"
+                    >
+                      <Wand2 className="w-4 h-4" />
+                      Apply All Auto-fixes
+                    </Button>
+                  )}
                 </div>
               </div>
 
@@ -387,9 +435,27 @@ const DataSanitization: React.FC<DataSanitizationProps> = ({
                 <div className="text-center py-8">
                   <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-4" />
                   <h3 className="font-medium text-green-800">Data Quality Excellent</h3>
-                  <p className="text-sm text-green-600">
+                  <p className="text-sm text-green-600 mb-4">
                     No data quality issues detected in your import
                   </p>
+                  <Button
+                    onClick={() => {
+                      // If no issues, directly proceed with original data
+                      onDataChange({
+                        ...importData,
+                        sanitizedData: importData.mappedData,
+                        sanitizationRules: []
+                      });
+                      toast({
+                        title: "Ready to Proceed",
+                        description: "Your data is clean and ready for import!",
+                      });
+                    }}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Confirm Data is Ready
+                  </Button>
                 </div>
               )}
             </div>
@@ -399,11 +465,14 @@ const DataSanitization: React.FC<DataSanitizationProps> = ({
 
       {/* Sanitized Data Preview */}
       {sanitizedData.length > 0 && (
-        <Card>
+        <Card className="border-green-200 bg-green-50">
           <CardHeader>
-            <CardTitle>Sanitized Data Preview</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <CheckCircle className="w-5 h-5 text-green-600" />
+              Sanitized Data Preview
+            </CardTitle>
             <CardDescription>
-              Preview of your data after sanitization ({sanitizedData.length} records)
+              Preview of your data after sanitization ({sanitizedData.length} records) - Ready for final import!
             </CardDescription>
           </CardHeader>
           <CardContent>

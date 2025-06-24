@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Bot, CheckCircle, X, Check, AlertCircle, Zap, RefreshCw } from 'lucide-react';
+import { Bot, CheckCircle, X, Check, AlertCircle, Zap, RefreshCw, ArrowRight } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { ImportData } from '@/pages/ImportReport';
 
@@ -28,6 +28,7 @@ const DataPreviewMapping: React.FC<DataPreviewMappingProps> = ({
   const { toast } = useToast();
   const [isAiMapping, setIsAiMapping] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<AISuggestion[]>([]);
+  const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
 
   // Standard Goodpass report fields
   const standardFields = [
@@ -90,12 +91,32 @@ const DataPreviewMapping: React.FC<DataPreviewMappingProps> = ({
         }
       });
 
-      setAiSuggestions(suggestions);
+      // Auto-accept high-confidence suggestions (>90%)
+      const autoAcceptedSuggestions = suggestions.filter(s => s.confidence > 0.9);
+      const updatedSuggestions = suggestions.map(s => ({
+        ...s,
+        status: s.confidence > 0.9 ? 'accepted' as const : 'pending' as const
+      }));
+
+      // Update field mappings for auto-accepted suggestions
+      const newMappings = { ...importData.fieldMappings };
+      autoAcceptedSuggestions.forEach(suggestion => {
+        newMappings[suggestion.targetField] = suggestion.sourceField;
+      });
+
+      if (autoAcceptedSuggestions.length > 0) {
+        onDataChange({
+          ...importData,
+          fieldMappings: newMappings
+        });
+      }
+
+      setAiSuggestions(updatedSuggestions);
       setIsAiMapping(false);
       
       toast({
         title: "AI Analysis Complete",
-        description: `Found ${suggestions.length} potential field mappings`,
+        description: `Found ${suggestions.length} potential mappings, auto-accepted ${autoAcceptedSuggestions.length} high-confidence matches`,
       });
     }, 2000);
   };
@@ -165,25 +186,32 @@ const DataPreviewMapping: React.FC<DataPreviewMappingProps> = ({
   };
 
   const handleGeneratePreview = () => {
-    const mappedData = importData.rawData.map((row) => {
-      const mappedRow: any = {};
-      
-      Object.entries(importData.fieldMappings).forEach(([standardField, sourceField]) => {
-        mappedRow[standardField] = row[sourceField];
+    setIsGeneratingPreview(true);
+    
+    // Simulate preview generation
+    setTimeout(() => {
+      const mappedData = importData.rawData.map((row) => {
+        const mappedRow: any = {};
+        
+        Object.entries(importData.fieldMappings).forEach(([standardField, sourceField]) => {
+          mappedRow[standardField] = row[sourceField];
+        });
+        
+        return mappedRow;
       });
+
+      onDataChange({
+        ...importData,
+        mappedData
+      });
+
+      setIsGeneratingPreview(false);
       
-      return mappedRow;
-    });
-
-    onDataChange({
-      ...importData,
-      mappedData
-    });
-
-    toast({
-      title: "Preview Generated",
-      description: `Generated preview for ${mappedData.length} records`,
-    });
+      toast({
+        title: "Preview Generated Successfully",
+        description: `Generated preview for ${mappedData.length} records. You can now proceed to the next step.`,
+      });
+    }, 1500);
   };
 
   const getConfidenceColor = (confidence: number) => {
@@ -205,9 +233,52 @@ const DataPreviewMapping: React.FC<DataPreviewMappingProps> = ({
     .every(field => importData.fieldMappings[field.key]);
 
   const pendingSuggestions = aiSuggestions.filter(s => s.status === 'pending');
+  const mappingProgress = (Object.keys(importData.fieldMappings).length / standardFields.filter(f => f.required).length) * 100;
 
   return (
     <div className="space-y-6">
+      {/* Progress Status Card */}
+      <Card className={`border-2 ${requiredFieldsMapped ? 'border-green-200 bg-green-50' : 'border-blue-200 bg-blue-50'}`}>
+        <CardContent className="pt-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="font-semibold text-lg">Step 2 Progress</h3>
+              <p className="text-sm text-muted-foreground">
+                {Math.round(mappingProgress)}% of required fields mapped
+              </p>
+            </div>
+            {requiredFieldsMapped && (
+              <div className="flex items-center text-green-600">
+                <CheckCircle className="w-5 h-5 mr-2" />
+                <span className="font-medium">Ready to proceed</span>
+              </div>
+            )}
+          </div>
+          
+          {Object.keys(importData.fieldMappings).length > 0 && importData.mappedData.length === 0 && (
+            <Button
+              onClick={handleGeneratePreview}
+              disabled={isGeneratingPreview}
+              size="lg"
+              className="w-full bg-blue-600 hover:bg-blue-700"
+            >
+              {isGeneratingPreview ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Generating Preview...
+                </>
+              ) : (
+                <>
+                  <Zap className="w-4 h-4 mr-2" />
+                  Generate Preview to Continue
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </>
+              )}
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+
       {/* AI Control Panel */}
       <Card>
         <CardHeader>
@@ -216,7 +287,7 @@ const DataPreviewMapping: React.FC<DataPreviewMappingProps> = ({
             AI Field Mapping Assistant
           </CardTitle>
           <CardDescription>
-            AI analyzes your data and suggests field mappings for human review
+            AI analyzes your data and suggests field mappings. High-confidence matches (>90%) are auto-accepted.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -249,15 +320,6 @@ const DataPreviewMapping: React.FC<DataPreviewMappingProps> = ({
                 Accept All ({pendingSuggestions.length})
               </Button>
             )}
-            
-            <Button
-              onClick={handleGeneratePreview}
-              disabled={Object.keys(importData.fieldMappings).length === 0}
-              className="flex items-center gap-2"
-            >
-              <Zap className="w-4 h-4" />
-              Generate Preview
-            </Button>
           </div>
 
           {/* Status Summary */}
@@ -326,7 +388,7 @@ const DataPreviewMapping: React.FC<DataPreviewMappingProps> = ({
                     <div className="text-xs text-gray-600 mb-2">{suggestion.reason}</div>
                     
                     <Badge className={`text-xs ${getStatusColor(suggestion.status)}`}>
-                      {suggestion.status}
+                      {suggestion.status === 'accepted' && suggestion.confidence > 0.9 ? 'auto-accepted' : suggestion.status}
                     </Badge>
                     
                     {suggestion.status === 'pending' && (
@@ -397,14 +459,26 @@ const DataPreviewMapping: React.FC<DataPreviewMappingProps> = ({
             </div>
           </div>
 
-          {!requiredFieldsMapped && (
+          {!requiredFieldsMapped && Object.keys(importData.fieldMappings).length === 0 && (
+            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-blue-600" />
+                <span className="font-medium text-blue-800">Getting Started</span>
+              </div>
+              <p className="text-sm text-blue-700 mt-1">
+                AI analysis will automatically accept high-confidence field mappings. Review the suggestions and accept or reject them as needed.
+              </p>
+            </div>
+          )}
+
+          {!requiredFieldsMapped && Object.keys(importData.fieldMappings).length > 0 && (
             <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
               <div className="flex items-center gap-2">
                 <AlertCircle className="w-5 h-5 text-yellow-600" />
-                <span className="font-medium text-yellow-800">Missing Required Fields</span>
+                <span className="font-medium text-yellow-800">More Fields Needed</span>
               </div>
               <p className="text-sm text-yellow-700 mt-1">
-                Please accept AI suggestions or manually map all required fields before proceeding.
+                Please map all required fields before generating the preview.
               </p>
             </div>
           )}
@@ -413,11 +487,14 @@ const DataPreviewMapping: React.FC<DataPreviewMappingProps> = ({
 
       {/* Mapped Data Preview */}
       {importData.mappedData.length > 0 && (
-        <Card>
+        <Card className="border-green-200 bg-green-50">
           <CardHeader>
-            <CardTitle>Mapped Data Preview</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <CheckCircle className="w-5 h-5 text-green-600" />
+              Mapped Data Preview
+            </CardTitle>
             <CardDescription>
-              Preview of your data after field mapping ({importData.mappedData.length} records)
+              Preview of your data after field mapping ({importData.mappedData.length} records) - Ready for next step!
             </CardDescription>
           </CardHeader>
           <CardContent>

@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle, AlertTriangle } from 'lucide-react';
 import DataSourceSelection from '@/components/import/DataSourceSelection';
 import DataPreviewMapping from '@/components/import/DataPreviewMapping';
 import DataSanitization from '@/components/import/DataSanitization';
@@ -42,7 +41,7 @@ const ImportReport = () => {
   ];
 
   const handleNext = () => {
-    if (currentStep < totalSteps) {
+    if (currentStep < totalSteps && canProceedToNextStep()) {
       setCurrentStep(currentStep + 1);
     }
   };
@@ -54,8 +53,8 @@ const ImportReport = () => {
   };
 
   const handleStepClick = (stepNumber: number) => {
-    // Only allow going to previous steps or next step if current step is valid
-    if (stepNumber <= currentStep || canProceedToNextStep()) {
+    // Allow going to previous steps or next step if current step is valid
+    if (stepNumber <= currentStep || (stepNumber === currentStep + 1 && canProceedToNextStep())) {
       setCurrentStep(stepNumber);
     }
   };
@@ -65,9 +64,11 @@ const ImportReport = () => {
       case 1:
         return importData.source !== null && importData.rawData.length > 0;
       case 2:
-        return Object.keys(importData.fieldMappings).length > 0;
+        return importData.mappedData.length > 0;
       case 3:
         return importData.sanitizedData.length > 0;
+      case 4:
+        return false; // Final step
       default:
         return false;
     }
@@ -142,6 +143,7 @@ const ImportReport = () => {
                     size="sm"
                     onClick={handleNext}
                     disabled={currentStep === totalSteps || !canProceedToNextStep()}
+                    className={canProceedToNextStep() ? "bg-blue-600 hover:bg-blue-700" : ""}
                   >
                     {currentStep === totalSteps ? 'Complete Import' : 'Next'}
                     {currentStep !== totalSteps && <ArrowRight className="w-4 h-4 ml-1" />}
@@ -153,36 +155,65 @@ const ImportReport = () => {
             
             {/* Step Navigation */}
             <div className="flex justify-between items-center">
-              {steps.map((step) => (
-                <button
-                  key={step.number}
-                  onClick={() => handleStepClick(step.number)}
-                  className={`flex flex-col items-center space-y-1 p-2 rounded-lg transition-colors ${
-                    step.number === currentStep
-                      ? 'bg-blue-50 text-blue-600'
-                      : step.number < currentStep
-                      ? 'text-green-600 hover:bg-green-50'
-                      : 'text-gray-400'
-                  }`}
-                  disabled={step.number > currentStep && !canProceedToNextStep()}
-                >
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                    step.number === currentStep
-                      ? 'bg-blue-600 text-white'
-                      : step.number < currentStep
-                      ? 'bg-green-600 text-white'
-                      : 'bg-gray-200 text-gray-500'
-                  }`}>
-                    {step.number}
-                  </div>
-                  <div className="text-xs font-medium">{step.title}</div>
-                  <div className="text-xs text-center hidden sm:block">{step.description}</div>
-                </button>
-              ))}
+              {steps.map((step) => {
+                const isCompleted = step.number < currentStep;
+                const isCurrent = step.number === currentStep;
+                const canAccess = step.number <= currentStep || (step.number === currentStep + 1 && canProceedToNextStep());
+                
+                return (
+                  <button
+                    key={step.number}
+                    onClick={() => handleStepClick(step.number)}
+                    className={`flex flex-col items-center space-y-1 p-2 rounded-lg transition-colors ${
+                      isCurrent
+                        ? 'bg-blue-50 text-blue-600'
+                        : isCompleted
+                        ? 'text-green-600 hover:bg-green-50'
+                        : canAccess
+                        ? 'text-gray-600 hover:bg-gray-50'
+                        : 'text-gray-400 cursor-not-allowed'
+                    }`}
+                    disabled={!canAccess}
+                  >
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                      isCurrent
+                        ? 'bg-blue-600 text-white'
+                        : isCompleted
+                        ? 'bg-green-600 text-white'
+                        : canAccess
+                        ? 'bg-gray-300 text-gray-700'
+                        : 'bg-gray-200 text-gray-500'
+                    }`}>
+                      {isCompleted ? <CheckCircle className="w-4 h-4" /> : step.number}
+                    </div>
+                    <div className="text-xs font-medium">{step.title}</div>
+                    <div className="text-xs text-center hidden sm:block">{step.description}</div>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* Step Status Indicator */}
+      {!canProceedToNextStep() && currentStep < totalSteps && (
+        <Card className="border-yellow-200 bg-yellow-50">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-yellow-600" />
+              <div>
+                <p className="font-medium text-yellow-800">Complete This Step</p>
+                <p className="text-sm text-yellow-700">
+                  {currentStep === 1 && "Please select a data source and upload your data."}
+                  {currentStep === 2 && "Please complete field mapping and generate the preview."}
+                  {currentStep === 3 && "Please apply sanitization rules to clean your data."}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Main Content */}
       <div className="min-h-[600px]">
