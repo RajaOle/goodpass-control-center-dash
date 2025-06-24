@@ -62,7 +62,7 @@ const Moderation = () => {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Partial Verification</CardTitle>
-            <CardDescription>Reported inappropriate content</CardDescription>
+            <CardDescription>Active reports with Partial Verification Status</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-red-600">5</div>
