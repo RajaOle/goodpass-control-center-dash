@@ -8,7 +8,6 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import DashboardLayout from "./components/DashboardLayout";
 import Dashboard from "./pages/Dashboard";
-import Analytics from "./pages/Analytics";
 import UserManagement from "./pages/UserManagement";
 import FinancialReputation from "./pages/FinancialReputation";
 import Verification from "./pages/Verification";
@@ -29,10 +28,6 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/dashboard" element={<DashboardLayout />}>
             <Route index element={<Dashboard />} />
-            <Route path="analytics" element={<Analytics />} />
-            <Route path="analytics/user-growth" element={<Analytics />} />
-            <Route path="analytics/transactions" element={<Analytics />} />
-            <Route path="analytics/engagement" element={<Analytics />} />
             <Route path="users" element={<UserManagement />} />
             <Route path="users/status" element={<UserManagement />} />
             <Route path="users/permissions" element={<UserManagement />} />

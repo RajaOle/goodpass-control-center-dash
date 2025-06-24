@@ -16,14 +16,6 @@ export const menuItems = [
     ]
   },
   {
-    title: "Analytics",
-    icon: BarChart3,
-    url: "/dashboard/analytics",
-    items: [
-      { title: "Overview", url: "/dashboard/analytics" },
-    ]
-  },
-  {
     title: "Manage Report",
     icon: MessageSquare,
     url: "/dashboard/moderation",
