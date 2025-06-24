@@ -1,52 +1,190 @@
-import React from 'react';
+
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
+import AdminPinDialog from '@/components/AdminPinDialog';
+import VerificationControls from '@/components/VerificationControls';
+import ReportsPagination from '@/components/ReportsPagination';
+
 const Moderation = () => {
-  const reportData = [{
-    id: 1,
-    reportType: "Loan Commitment (LC)",
-    uniqueId: "LC-2024-001",
-    initialAmount: "$50,000",
-    outstandingAmount: "$35,000",
-    repaymentType: "Installment",
-    lastRepaymentDate: "2024-01-15",
-    reportStatus: "Active",
-    verificationStatus: "Verified",
-    reporterName: "John Smith",
-    collateralInfo: "Real Estate Property - 123 Main St"
-  }, {
-    id: 2,
-    reportType: "Loan Commitment (LC)",
-    uniqueId: "LC-2024-002",
-    initialAmount: "$25,000",
-    outstandingAmount: "$20,000",
-    repaymentType: "Single Payment",
-    lastRepaymentDate: "2024-02-20",
-    reportStatus: "Pending",
-    verificationStatus: "Partially Verified",
-    reporterName: "Jane Doe",
-    collateralInfo: "Vehicle - Toyota Camry 2020"
-  }, {
-    id: 3,
-    reportType: "Loan Commitment (LC)",
-    uniqueId: "LC-2024-003",
-    initialAmount: "$100,000",
-    outstandingAmount: "$75,000",
-    repaymentType: "Open Payment",
-    lastRepaymentDate: "2024-03-10",
-    reportStatus: "Active",
-    verificationStatus: "Verified",
-    reporterName: "Mike Johnson",
-    collateralInfo: "Business Equipment - Manufacturing Tools"
-  }];
-  return <div className="space-y-6">
+  const { toast } = useToast();
+  
+  // Verification states
+  const [verificationEnabled, setVerificationEnabled] = useState(false);
+  const [aiAssistEnabled, setAiAssistEnabled] = useState(false);
+  const [showPinDialog, setShowPinDialog] = useState(false);
+  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+  
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const reportsPerPage = 5;
+
+  const reportData = [
+    {
+      id: 1,
+      reportType: "Loan Commitment (LC)",
+      uniqueId: "LC-2024-001",
+      initialAmount: "$50,000",
+      outstandingAmount: "$35,000",
+      repaymentType: "Installment",
+      lastRepaymentDate: "2024-01-15",
+      reportStatus: "Active",
+      verificationStatus: "Verified",
+      reporterName: "John Smith",
+      collateralInfo: "Real Estate Property - 123 Main St"
+    },
+    {
+      id: 2,
+      reportType: "Loan Commitment (LC)",
+      uniqueId: "LC-2024-002",
+      initialAmount: "$25,000",
+      outstandingAmount: "$20,000",
+      repaymentType: "Single Payment",
+      lastRepaymentDate: "2024-02-20",
+      reportStatus: "Pending",
+      verificationStatus: "Partially Verified",
+      reporterName: "Jane Doe",
+      collateralInfo: "Vehicle - Toyota Camry 2020"
+    },
+    {
+      id: 3,
+      reportType: "Loan Commitment (LC)",
+      uniqueId: "LC-2024-003",
+      initialAmount: "$100,000",
+      outstandingAmount: "$75,000",
+      repaymentType: "Open Payment",
+      lastRepaymentDate: "2024-03-10",
+      reportStatus: "Active",
+      verificationStatus: "Verified",
+      reporterName: "Mike Johnson",
+      collateralInfo: "Business Equipment - Manufacturing Tools"
+    },
+    // Add more sample data for pagination testing
+    {
+      id: 4,
+      reportType: "Loan Commitment (LC)",
+      uniqueId: "LC-2024-004",
+      initialAmount: "$75,000",
+      outstandingAmount: "$60,000",
+      repaymentType: "Installment",
+      lastRepaymentDate: "2024-03-15",
+      reportStatus: "Pending",
+      verificationStatus: "Unverified",
+      reporterName: "Alice Brown",
+      collateralInfo: "Commercial Property - Office Building"
+    },
+    {
+      id: 5,
+      reportType: "Loan Commitment (LC)",
+      uniqueId: "LC-2024-005",
+      initialAmount: "$30,000",
+      outstandingAmount: "$25,000",
+      repaymentType: "Single Payment",
+      lastRepaymentDate: "2024-03-20",
+      reportStatus: "Active",
+      verificationStatus: "Partially Verified",
+      reporterName: "Bob Wilson",
+      collateralInfo: "Equipment - Construction Machinery"
+    },
+    {
+      id: 6,
+      reportType: "Loan Commitment (LC)",
+      uniqueId: "LC-2024-006",
+      initialAmount: "$120,000",
+      outstandingAmount: "$90,000",
+      repaymentType: "Open Payment",
+      lastRepaymentDate: "2024-03-25",
+      reportStatus: "Pending",
+      verificationStatus: "Verified",
+      reporterName: "Carol Davis",
+      collateralInfo: "Real Estate - Warehouse Facility"
+    }
+  ];
+
+  // Calculate pagination
+  const totalPages = Math.ceil(reportData.length / reportsPerPage);
+  const paginatedReports = useMemo(() => {
+    const startIndex = (currentPage - 1) * reportsPerPage;
+    const endIndex = startIndex + reportsPerPage;
+    return reportData.slice(startIndex, endIndex);
+  }, [currentPage, reportsPerPage, reportData]);
+
+  // Statistics calculations
+  const pendingReports = reportData.filter(report => report.reportStatus === "Pending").length;
+  const partiallyVerifiedReports = reportData.filter(report => report.verificationStatus === "Partially Verified").length;
+
+  const handleVerificationToggle = (checked: boolean) => {
+    if (!checked && verificationEnabled) {
+      // Deactivating requires PIN
+      setPendingAction(() => () => {
+        setVerificationEnabled(false);
+        setAiAssistEnabled(false); // Also disable AI assist
+        toast({
+          title: "Verification Disabled",
+          description: "Auto-verification has been turned off.",
+        });
+      });
+      setShowPinDialog(true);
+    } else if (checked) {
+      // Activating doesn't require PIN
+      setVerificationEnabled(true);
+      toast({
+        title: "Verification Enabled",
+        description: "Auto-verification is now active.",
+      });
+    }
+  };
+
+  const handleAiAssistToggle = (checked: boolean) => {
+    setAiAssistEnabled(checked);
+    toast({
+      title: checked ? "AI Assist Enabled" : "AI Assist Disabled",
+      description: checked 
+        ? "AI will now assist with verification decisions." 
+        : "AI assistance has been turned off.",
+    });
+  };
+
+  const handlePinSuccess = () => {
+    if (pendingAction) {
+      pendingAction();
+      setPendingAction(null);
+    }
+  };
+
+  const handlePinClose = () => {
+    setShowPinDialog(false);
+    setPendingAction(null);
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleProcessReport = (reportId: number) => {
+    toast({
+      title: "Processing Report",
+      description: `Processing report with ID: ${reportId}`,
+    });
+  };
+
+  return (
+    <div className="space-y-6">
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Manage Report</h2>
         <p className="text-muted-foreground">
           Monitor and moderate user-generated content and reports.
         </p>
       </div>
+
+      <VerificationControls
+        verificationEnabled={verificationEnabled}
+        aiAssistEnabled={aiAssistEnabled}
+        onVerificationToggle={handleVerificationToggle}
+        onAiAssistToggle={handleAiAssistToggle}
+      />
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
@@ -55,7 +193,7 @@ const Moderation = () => {
             <CardDescription>Reports awaiting review</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-orange-600">12</div>
+            <div className="text-3xl font-bold text-orange-600">{pendingReports}</div>
           </CardContent>
         </Card>
         
@@ -65,7 +203,7 @@ const Moderation = () => {
             <CardDescription>Active reports with Partial Verification Status</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-red-600">5</div>
+            <div className="text-3xl font-bold text-red-600">{partiallyVerifiedReports}</div>
           </CardContent>
         </Card>
         
@@ -83,11 +221,14 @@ const Moderation = () => {
       <Card>
         <CardHeader>
           <CardTitle>Recent Moderation Queue</CardTitle>
-          <CardDescription>Reports Requires Review</CardDescription>
+          <CardDescription>
+            Reports Requiring Review (Page {currentPage} of {totalPages})
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
-            {reportData.map(report => <div key={report.id} className="p-6 border rounded-lg bg-gray-50">
+            {paginatedReports.map(report => (
+              <div key={report.id} className="p-6 border rounded-lg bg-gray-50">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div className="space-y-3">
                     <div>
@@ -145,12 +286,36 @@ const Moderation = () => {
                 </div>
                 
                 <div className="flex justify-end pt-4 border-t">
-                  <Button size="sm">Process</Button>
+                  <Button 
+                    size="sm" 
+                    onClick={() => handleProcessReport(report.id)}
+                  >
+                    Process
+                  </Button>
                 </div>
-              </div>)}
+              </div>
+            ))}
           </div>
+          
+          {totalPages > 1 && (
+            <div className="flex justify-center mt-6">
+              <ReportsPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
-    </div>;
+
+      <AdminPinDialog
+        isOpen={showPinDialog}
+        onClose={handlePinClose}
+        onSuccess={handlePinSuccess}
+      />
+    </div>
+  );
 };
+
 export default Moderation;
