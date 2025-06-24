@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
@@ -21,7 +20,6 @@ import {
   Users,
   CreditCard,
   Shield,
-  Activity,
   MessageSquare,
   Megaphone,
   Settings,
@@ -86,16 +84,6 @@ const menuItems = [
       { title: "Pending Verifications", url: "/dashboard/verification" },
       { title: "Completed Verifications", url: "/dashboard/verification/completed" },
       { title: "Rejected Applications", url: "/dashboard/verification/rejected" },
-    ]
-  },
-  {
-    title: "Activity Logs",
-    icon: Activity,
-    url: "/dashboard/activity",
-    items: [
-      { title: "System Logs", url: "/dashboard/activity" },
-      { title: "User Actions", url: "/dashboard/activity/user-actions" },
-      { title: "Security Events", url: "/dashboard/activity/security" },
     ]
   },
   {

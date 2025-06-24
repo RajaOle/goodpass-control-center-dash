@@ -12,7 +12,6 @@ import Analytics from "./pages/Analytics";
 import UserManagement from "./pages/UserManagement";
 import FinancialReputation from "./pages/FinancialReputation";
 import Verification from "./pages/Verification";
-import ActivityLogs from "./pages/ActivityLogs";
 import Moderation from "./pages/Moderation";
 import Announcements from "./pages/Announcements";
 import Settings from "./pages/Settings";
@@ -42,9 +41,6 @@ const App = () => (
             <Route path="verification" element={<Verification />} />
             <Route path="verification/completed" element={<Verification />} />
             <Route path="verification/rejected" element={<Verification />} />
-            <Route path="activity" element={<ActivityLogs />} />
-            <Route path="activity/user-actions" element={<ActivityLogs />} />
-            <Route path="activity/security" element={<ActivityLogs />} />
             <Route path="moderation" element={<Moderation />} />
             <Route path="moderation/flagged" element={<Moderation />} />
             <Route path="moderation/history" element={<Moderation />} />
