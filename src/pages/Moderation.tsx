@@ -8,9 +8,9 @@ const Moderation = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">Peer Review Moderation</h2>
+        <h2 className="text-3xl font-bold tracking-tight">Manage Report</h2>
         <p className="text-muted-foreground">
-          Monitor and moderate user-generated content and peer reviews.
+          Monitor and moderate user-generated content and reports.
         </p>
       </div>
 
@@ -58,7 +58,7 @@ const Moderation = () => {
             {[1, 2, 3].map((item) => (
               <div key={item} className="flex items-center justify-between p-4 border rounded-lg">
                 <div>
-                  <p className="font-medium">Peer Review #{item}</p>
+                  <p className="font-medium">Report #{item}</p>
                   <p className="text-sm text-muted-foreground">Flagged for inappropriate content</p>
                 </div>
                 <div className="flex items-center space-x-2">
