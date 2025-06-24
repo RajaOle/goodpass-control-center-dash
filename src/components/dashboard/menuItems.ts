@@ -3,7 +3,6 @@ import {
   BarChart3,
   Users,
   MessageSquare,
-  Megaphone,
   Settings,
 } from 'lucide-react';
 
@@ -42,16 +41,6 @@ export const menuItems = [
       { title: "User Directory", url: "/dashboard/users" },
       { title: "Account Status", url: "/dashboard/users/status" },
       { title: "Permissions", url: "/dashboard/users/permissions" },
-    ]
-  },
-  {
-    title: "Announcements",
-    icon: Megaphone,
-    url: "/dashboard/announcements",
-    items: [
-      { title: "Create Announcement", url: "/dashboard/announcements" },
-      { title: "Scheduled Posts", url: "/dashboard/announcements/scheduled" },
-      { title: "Announcement History", url: "/dashboard/announcements/history" },
     ]
   },
   {

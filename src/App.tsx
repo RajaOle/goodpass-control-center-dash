@@ -15,7 +15,6 @@ import Verification from "./pages/Verification";
 import Moderation from "./pages/Moderation";
 import ModerationHistory from "./pages/ModerationHistory";
 import ImportReport from "./pages/ImportReport";
-import Announcements from "./pages/Announcements";
 import Settings from "./pages/Settings";
 
 const queryClient = new QueryClient();
@@ -46,9 +45,6 @@ const App = () => (
             <Route path="moderation" element={<Moderation />} />
             <Route path="moderation/import" element={<ImportReport />} />
             <Route path="moderation/history" element={<ModerationHistory />} />
-            <Route path="announcements" element={<Announcements />} />
-            <Route path="announcements/scheduled" element={<Announcements />} />
-            <Route path="announcements/history" element={<Announcements />} />
             <Route path="settings" element={<Settings />} />
             <Route path="settings/preferences" element={<Settings />} />
             <Route path="settings/system" element={<Settings />} />
