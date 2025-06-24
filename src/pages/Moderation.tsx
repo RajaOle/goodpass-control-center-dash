@@ -33,6 +33,10 @@ const Moderation = () => {
       reportStatus: "Active",
       verificationStatus: "Verified",
       reporterName: "John Smith",
+      reporterStatus: "individual",
+      reporterPhone: "+1 (555) 123-4567",
+      reporteeName: "Michael Johnson",
+      reporteePhone: "+1 (555) 987-6543",
       collateralInfo: "Real Estate Property - 123 Main St"
     },
     {
@@ -46,6 +50,10 @@ const Moderation = () => {
       reportStatus: "Pending",
       verificationStatus: "Partially Verified",
       reporterName: "Jane Doe",
+      reporterStatus: "business",
+      reporterPhone: "+1 (555) 234-5678",
+      reporteeName: "Sarah Williams",
+      reporteePhone: "+1 (555) 876-5432",
       collateralInfo: "Vehicle - Toyota Camry 2020"
     },
     {
@@ -59,9 +67,12 @@ const Moderation = () => {
       reportStatus: "Active",
       verificationStatus: "Verified",
       reporterName: "Mike Johnson",
+      reporterStatus: "business",
+      reporterPhone: "+1 (555) 345-6789",
+      reporteeName: "David Brown",
+      reporteePhone: "+1 (555) 765-4321",
       collateralInfo: "Business Equipment - Manufacturing Tools"
     },
-    // Add more sample data for pagination testing
     {
       id: 4,
       reportType: "Loan Commitment (LC)",
@@ -73,6 +84,10 @@ const Moderation = () => {
       reportStatus: "Pending",
       verificationStatus: "Unverified",
       reporterName: "Alice Brown",
+      reporterStatus: "individual",
+      reporterPhone: "+1 (555) 456-7890",
+      reporteeName: "Lisa Davis",
+      reporteePhone: "+1 (555) 654-3210",
       collateralInfo: "Commercial Property - Office Building"
     },
     {
@@ -86,6 +101,10 @@ const Moderation = () => {
       reportStatus: "Active",
       verificationStatus: "Partially Verified",
       reporterName: "Bob Wilson",
+      reporterStatus: "individual",
+      reporterPhone: "+1 (555) 567-8901",
+      reporteeName: "Robert Miller",
+      reporteePhone: "+1 (555) 543-2109",
       collateralInfo: "Equipment - Construction Machinery"
     },
     {
@@ -99,6 +118,10 @@ const Moderation = () => {
       reportStatus: "Pending",
       verificationStatus: "Verified",
       reporterName: "Carol Davis",
+      reporterStatus: "business",
+      reporterPhone: "+1 (555) 678-9012",
+      reporteeName: "Jennifer Wilson",
+      reporteePhone: "+1 (555) 432-1098",
       collateralInfo: "Real Estate - Warehouse Facility"
     }
   ];
@@ -228,8 +251,18 @@ const Moderation = () => {
         <CardContent>
           <div className="space-y-6">
             {paginatedReports.map(report => (
-              <div key={report.id} className="p-6 border rounded-lg bg-gray-50">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div key={report.id} className="p-6 border rounded-lg bg-gray-50 relative">
+                {/* Reporter Status Badge */}
+                <div className="absolute top-4 right-4">
+                  <Badge 
+                    variant={report.reporterStatus === "individual" ? "default" : "secondary"}
+                    className={report.reporterStatus === "individual" ? "bg-green-500 hover:bg-green-600" : "bg-blue-500 hover:bg-blue-600"}
+                  >
+                    {report.reporterStatus === "individual" ? "Individual" : "Business"}
+                  </Badge>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 pr-20">
                   <div className="space-y-3">
                     <div>
                       <label className="text-sm font-medium text-gray-600">Report Type</label>
@@ -255,6 +288,14 @@ const Moderation = () => {
                       <label className="text-sm font-medium text-gray-600">Last Repayment Date</label>
                       <p className="text-sm text-gray-900">{report.lastRepaymentDate}</p>
                     </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">Reporter Name</label>
+                      <p className="text-sm text-gray-900">{report.reporterName}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">Reporter Phone Number</label>
+                      <p className="text-sm text-gray-900">{report.reporterPhone}</p>
+                    </div>
                   </div>
                   
                   <div className="space-y-3">
@@ -275,8 +316,12 @@ const Moderation = () => {
                       </div>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-600">Reporter Name</label>
-                      <p className="text-sm text-gray-900">{report.reporterName}</p>
+                      <label className="text-sm font-medium text-gray-600">Reportee Name</label>
+                      <p className="text-sm text-gray-900">{report.reporteeName}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">Reportee Phone Number</label>
+                      <p className="text-sm text-gray-900">{report.reporteePhone}</p>
                     </div>
                     <div>
                       <label className="text-sm font-medium text-gray-600">Collateral Information</label>
