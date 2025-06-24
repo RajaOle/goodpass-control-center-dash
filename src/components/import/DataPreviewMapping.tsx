@@ -2,15 +2,23 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Bot, CheckCircle, AlertCircle, Zap } from 'lucide-react';
+import { Bot, CheckCircle, X, Check, AlertCircle, Zap, RefreshCw } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { ImportData } from '@/pages/ImportReport';
 
 interface DataPreviewMappingProps {
   importData: ImportData;
   onDataChange: (data: ImportData) => void;
+}
+
+interface AISuggestion {
+  sourceField: string;
+  targetField: string;
+  confidence: number;
+  status: 'pending' | 'accepted' | 'rejected';
+  reason?: string;
 }
 
 const DataPreviewMapping: React.FC<DataPreviewMappingProps> = ({
@@ -19,27 +27,27 @@ const DataPreviewMapping: React.FC<DataPreviewMappingProps> = ({
 }) => {
   const { toast } = useToast();
   const [isAiMapping, setIsAiMapping] = useState(false);
-  const [mappingConfidence, setMappingConfidence] = useState<Record<string, number>>({});
+  const [aiSuggestions, setAiSuggestions] = useState<AISuggestion[]>([]);
 
   // Standard Goodpass report fields
   const standardFields = [
-    { key: 'reporterName', label: 'Reporter Name', required: true },
-    { key: 'reporterPhone', label: 'Reporter Phone', required: true },
-    { key: 'reporteeName', label: 'Reportee Name', required: true },
-    { key: 'reporteePhone', label: 'Reportee Phone', required: true },
-    { key: 'initialAmount', label: 'Initial Amount', required: true },
-    { key: 'outstandingAmount', label: 'Outstanding Amount', required: true },
-    { key: 'repaymentType', label: 'Repayment Type', required: true },
-    { key: 'lastRepaymentDate', label: 'Last Repayment Date', required: false },
-    { key: 'collateralInfo', label: 'Collateral Information', required: false },
-    { key: 'reportType', label: 'Report Type', required: false }
+    { key: 'reporterName', label: 'Reporter Name', required: true, description: 'Name of the person making the report' },
+    { key: 'reporterPhone', label: 'Reporter Phone', required: true, description: 'Contact number of the reporter' },
+    { key: 'reporteeName', label: 'Reportee Name', required: true, description: 'Name of the person being reported' },
+    { key: 'reporteePhone', label: 'Reportee Phone', required: true, description: 'Contact number of the reportee' },
+    { key: 'initialAmount', label: 'Initial Amount', required: true, description: 'Original loan amount' },
+    { key: 'outstandingAmount', label: 'Outstanding Amount', required: true, description: 'Remaining amount to be paid' },
+    { key: 'repaymentType', label: 'Repayment Type', required: true, description: 'Type of repayment agreement' },
+    { key: 'lastRepaymentDate', label: 'Last Repayment Date', required: false, description: 'Date of most recent payment' },
+    { key: 'collateralInfo', label: 'Collateral Information', required: false, description: 'Details about collateral' },
+    { key: 'reportType', label: 'Report Type', required: false, description: 'Category of the report' }
   ];
 
   const sourceFields = importData.rawData.length > 0 ? Object.keys(importData.rawData[0]) : [];
 
   useEffect(() => {
     // Auto-suggest AI mapping on component mount
-    if (sourceFields.length > 0 && Object.keys(importData.fieldMappings).length === 0) {
+    if (sourceFields.length > 0 && aiSuggestions.length === 0) {
       handleAiMapping();
     }
   }, [sourceFields]);
@@ -49,79 +57,110 @@ const DataPreviewMapping: React.FC<DataPreviewMappingProps> = ({
     
     // Simulate AI field mapping
     setTimeout(() => {
-      const aiMappings: Record<string, string> = {};
-      const confidence: Record<string, number> = {};
+      const suggestions: AISuggestion[] = [];
 
       // AI mapping logic simulation
       sourceFields.forEach((sourceField) => {
         const lowerField = sourceField.toLowerCase();
         
         if (lowerField.includes('reporter') && lowerField.includes('name')) {
-          aiMappings['reporterName'] = sourceField;
-          confidence['reporterName'] = 0.95;
+          suggestions.push({ sourceField, targetField: 'reporterName', confidence: 0.95, status: 'pending', reason: 'Exact match found' });
         } else if (lowerField.includes('lender') && lowerField.includes('name')) {
-          aiMappings['reporterName'] = sourceField;
-          confidence['reporterName'] = 0.85;
+          suggestions.push({ sourceField, targetField: 'reporterName', confidence: 0.85, status: 'pending', reason: 'Similar context match' });
         } else if (lowerField.includes('reporter') && (lowerField.includes('phone') || lowerField.includes('contact'))) {
-          aiMappings['reporterPhone'] = sourceField;
-          confidence['reporterPhone'] = 0.90;
+          suggestions.push({ sourceField, targetField: 'reporterPhone', confidence: 0.90, status: 'pending', reason: 'Phone field detected' });
         } else if (lowerField.includes('lender') && (lowerField.includes('contact') || lowerField.includes('phone'))) {
-          aiMappings['reporterPhone'] = sourceField;
-          confidence['reporterPhone'] = 0.80;
+          suggestions.push({ sourceField, targetField: 'reporterPhone', confidence: 0.80, status: 'pending', reason: 'Contact field match' });
         } else if (lowerField.includes('reportee') && lowerField.includes('name')) {
-          aiMappings['reporteeName'] = sourceField;
-          confidence['reporteeName'] = 0.95;
+          suggestions.push({ sourceField, targetField: 'reporteeName', confidence: 0.95, status: 'pending', reason: 'Exact match found' });
         } else if (lowerField.includes('borrower') && lowerField.includes('name')) {
-          aiMappings['reporteeName'] = sourceField;
-          confidence['reporteeName'] = 0.85;
+          suggestions.push({ sourceField, targetField: 'reporteeName', confidence: 0.85, status: 'pending', reason: 'Similar context match' });
         } else if (lowerField.includes('reportee') && (lowerField.includes('phone') || lowerField.includes('contact'))) {
-          aiMappings['reporteePhone'] = sourceField;
-          confidence['reporteePhone'] = 0.90;
+          suggestions.push({ sourceField, targetField: 'reporteePhone', confidence: 0.90, status: 'pending', reason: 'Phone field detected' });
         } else if (lowerField.includes('borrower') && (lowerField.includes('contact') || lowerField.includes('phone'))) {
-          aiMappings['reporteePhone'] = sourceField;
-          confidence['reporteePhone'] = 0.80;
+          suggestions.push({ sourceField, targetField: 'reporteePhone', confidence: 0.80, status: 'pending', reason: 'Contact field match' });
         } else if (lowerField.includes('loan') && lowerField.includes('amount') || lowerField.includes('principal')) {
-          aiMappings['initialAmount'] = sourceField;
-          confidence['initialAmount'] = 0.90;
+          suggestions.push({ sourceField, targetField: 'initialAmount', confidence: 0.90, status: 'pending', reason: 'Amount field detected' });
         } else if (lowerField.includes('outstanding') || lowerField.includes('remaining') || lowerField.includes('balance')) {
-          aiMappings['outstandingAmount'] = sourceField;
-          confidence['outstandingAmount'] = 0.85;
+          suggestions.push({ sourceField, targetField: 'outstandingAmount', confidence: 0.85, status: 'pending', reason: 'Balance field detected' });
         } else if (lowerField.includes('repayment') && lowerField.includes('type') || lowerField.includes('payment') && lowerField.includes('terms')) {
-          aiMappings['repaymentType'] = sourceField;
-          confidence['repaymentType'] = 0.75;
+          suggestions.push({ sourceField, targetField: 'repaymentType', confidence: 0.75, status: 'pending', reason: 'Payment type detected' });
         } else if (lowerField.includes('collateral') || lowerField.includes('security')) {
-          aiMappings['collateralInfo'] = sourceField;
-          confidence['collateralInfo'] = 0.80;
+          suggestions.push({ sourceField, targetField: 'collateralInfo', confidence: 0.80, status: 'pending', reason: 'Security field detected' });
         }
       });
 
-      setMappingConfidence(confidence);
-      onDataChange({
-        ...importData,
-        fieldMappings: aiMappings
-      });
-
+      setAiSuggestions(suggestions);
       setIsAiMapping(false);
       
       toast({
-        title: "AI Mapping Complete",
-        description: `Mapped ${Object.keys(aiMappings).length} fields with AI assistance`,
+        title: "AI Analysis Complete",
+        description: `Found ${suggestions.length} potential field mappings`,
       });
     }, 2000);
   };
 
-  const handleManualMapping = (standardField: string, sourceField: string) => {
+  const handleAcceptSuggestion = (suggestion: AISuggestion) => {
+    // Update AI suggestions
+    setAiSuggestions(prev => 
+      prev.map(s => 
+        s.sourceField === suggestion.sourceField 
+          ? { ...s, status: 'accepted' as const }
+          : s
+      )
+    );
+
+    // Update field mappings
     const newMappings = { ...importData.fieldMappings };
-    
-    if (sourceField === 'none') {
-      delete newMappings[standardField];
-    } else {
-      newMappings[standardField] = sourceField;
-    }
+    newMappings[suggestion.targetField] = suggestion.sourceField;
     
     onDataChange({
       ...importData,
       fieldMappings: newMappings
+    });
+
+    toast({
+      title: "Mapping Accepted",
+      description: `${suggestion.sourceField} → ${suggestion.targetField}`,
+    });
+  };
+
+  const handleRejectSuggestion = (suggestion: AISuggestion) => {
+    setAiSuggestions(prev => 
+      prev.map(s => 
+        s.sourceField === suggestion.sourceField 
+          ? { ...s, status: 'rejected' as const }
+          : s
+      )
+    );
+
+    toast({
+      title: "Mapping Rejected",
+      description: `Suggestion for ${suggestion.sourceField} was rejected`,
+      variant: "destructive"
+    });
+  };
+
+  const handleAcceptAll = () => {
+    const pendingSuggestions = aiSuggestions.filter(s => s.status === 'pending');
+    
+    setAiSuggestions(prev => 
+      prev.map(s => ({ ...s, status: 'accepted' as const }))
+    );
+
+    const newMappings = { ...importData.fieldMappings };
+    pendingSuggestions.forEach(suggestion => {
+      newMappings[suggestion.targetField] = suggestion.sourceField;
+    });
+    
+    onDataChange({
+      ...importData,
+      fieldMappings: newMappings
+    });
+
+    toast({
+      title: "All Mappings Accepted",
+      description: `Accepted ${pendingSuggestions.length} AI suggestions`,
     });
   };
 
@@ -153,24 +192,35 @@ const DataPreviewMapping: React.FC<DataPreviewMappingProps> = ({
     return 'bg-red-100 text-red-800';
   };
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'accepted': return 'bg-green-100 text-green-800';
+      case 'rejected': return 'bg-red-100 text-red-800';
+      default: return 'bg-blue-100 text-blue-800';
+    }
+  };
+
   const requiredFieldsMapped = standardFields
     .filter(field => field.required)
     .every(field => importData.fieldMappings[field.key]);
 
+  const pendingSuggestions = aiSuggestions.filter(s => s.status === 'pending');
+
   return (
     <div className="space-y-6">
+      {/* AI Control Panel */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Bot className="w-5 h-5" />
-            AI-Assisted Field Mapping
+            AI Field Mapping Assistant
           </CardTitle>
           <CardDescription>
-            Let AI automatically map your data fields or customize the mapping manually
+            AI analyzes your data and suggests field mappings for human review
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-4 mb-6">
+          <div className="flex gap-4 mb-4">
             <Button
               onClick={handleAiMapping}
               disabled={isAiMapping}
@@ -179,75 +229,172 @@ const DataPreviewMapping: React.FC<DataPreviewMappingProps> = ({
               {isAiMapping ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  AI Mapping...
+                  Analyzing...
                 </>
               ) : (
                 <>
-                  <Zap className="w-4 h-4" />
-                  Auto-Map with AI
+                  <RefreshCw className="w-4 h-4" />
+                  Re-analyze Fields
                 </>
               )}
             </Button>
             
+            {pendingSuggestions.length > 0 && (
+              <Button
+                onClick={handleAcceptAll}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Check className="w-4 h-4" />
+                Accept All ({pendingSuggestions.length})
+              </Button>
+            )}
+            
             <Button
-              variant="outline"
               onClick={handleGeneratePreview}
               disabled={Object.keys(importData.fieldMappings).length === 0}
+              className="flex items-center gap-2"
             >
+              <Zap className="w-4 h-4" />
               Generate Preview
             </Button>
           </div>
 
-          <div className="space-y-4">
-            {standardFields.map((field) => (
-              <div key={field.key} className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="flex flex-col">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{field.label}</span>
-                      {field.required && (
-                        <Badge variant="destructive" className="text-xs">Required</Badge>
-                      )}
-                      {mappingConfidence[field.key] && (
-                        <Badge className={`text-xs ${getConfidenceColor(mappingConfidence[field.key])}`}>
-                          {Math.round(mappingConfidence[field.key] * 100)}% confidence
-                        </Badge>
+          {/* Status Summary */}
+          <div className="flex gap-4 text-sm">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+              <span>Pending: {aiSuggestions.filter(s => s.status === 'pending').length}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+              <span>Accepted: {aiSuggestions.filter(s => s.status === 'accepted').length}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+              <span>Rejected: {aiSuggestions.filter(s => s.status === 'rejected').length}</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Three-Column Mapping Interface */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Field Mapping Interface</CardTitle>
+          <CardDescription>
+            Review AI suggestions and manage field mappings
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Column 1: Original Imported Data */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-lg border-b pb-2">Original Imported Data</h3>
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {sourceFields.map((field) => (
+                  <div key={field} className="p-3 bg-gray-50 rounded-lg">
+                    <div className="font-medium">{field}</div>
+                    <div className="text-sm text-gray-600">
+                      Sample: {importData.rawData[0]?.[field] || 'N/A'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Column 2: AI Suggestions */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-lg border-b pb-2">AI Suggestions</h3>
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {aiSuggestions.map((suggestion, index) => (
+                  <div key={index} className={`p-3 border rounded-lg ${
+                    suggestion.status === 'accepted' ? 'bg-green-50 border-green-200' :
+                    suggestion.status === 'rejected' ? 'bg-red-50 border-red-200' :
+                    'bg-blue-50 border-blue-200'
+                  }`}>
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1">
+                        <div className="font-medium text-sm">{suggestion.sourceField}</div>
+                        <div className="text-xs text-gray-600">→ {suggestion.targetField}</div>
+                      </div>
+                      <Badge className={`text-xs ${getConfidenceColor(suggestion.confidence)}`}>
+                        {Math.round(suggestion.confidence * 100)}%
+                      </Badge>
+                    </div>
+                    
+                    <div className="text-xs text-gray-600 mb-2">{suggestion.reason}</div>
+                    
+                    <Badge className={`text-xs ${getStatusColor(suggestion.status)}`}>
+                      {suggestion.status}
+                    </Badge>
+                    
+                    {suggestion.status === 'pending' && (
+                      <div className="flex gap-2 mt-2">
+                        <Button
+                          size="sm"
+                          onClick={() => handleAcceptSuggestion(suggestion)}
+                          className="flex items-center gap-1 h-7 px-2 text-xs"
+                        >
+                          <Check className="w-3 h-3" />
+                          Accept
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleRejectSuggestion(suggestion)}
+                          className="flex items-center gap-1 h-7 px-2 text-xs"
+                        >
+                          <X className="w-3 h-3" />
+                          Reject
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+                
+                {aiSuggestions.length === 0 && !isAiMapping && (
+                  <div className="text-center py-8 text-gray-500">
+                    <Bot className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                    <p>Click "Re-analyze Fields" to get AI suggestions</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Column 3: Goodpass Standard Fields */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-lg border-b pb-2">Goodpass Standard Fields</h3>
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {standardFields.map((field) => {
+                  const isMapped = importData.fieldMappings[field.key];
+                  return (
+                    <div key={field.key} className={`p-3 rounded-lg border ${
+                      isMapped ? 'bg-green-50 border-green-200' : 
+                      field.required ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'
+                    }`}>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-medium">{field.label}</span>
+                        {field.required && (
+                          <Badge variant="destructive" className="text-xs">Required</Badge>
+                        )}
+                        {isMapped ? (
+                          <CheckCircle className="w-4 h-4 text-green-600" />
+                        ) : field.required ? (
+                          <AlertCircle className="w-4 h-4 text-red-600" />
+                        ) : null}
+                      </div>
+                      <div className="text-xs text-gray-600 mb-2">{field.description}</div>
+                      {isMapped && (
+                        <div className="text-xs font-medium text-green-700">
+                          Mapped from: {importData.fieldMappings[field.key]}
+                        </div>
                       )}
                     </div>
-                    <span className="text-sm text-muted-foreground">
-                      Standard Goodpass field
-                    </span>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-3">
-                  <Select
-                    value={importData.fieldMappings[field.key] || 'none'}
-                    onValueChange={(value) => handleManualMapping(field.key, value)}
-                  >
-                    <SelectTrigger className="w-64">
-                      <SelectValue placeholder="Select source field" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Not mapped</SelectItem>
-                      {sourceFields.map((sourceField) => (
-                        <SelectItem key={sourceField} value={sourceField}>
-                          {sourceField}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  
-                  {importData.fieldMappings[field.key] ? (
-                    <CheckCircle className="w-5 h-5 text-green-600" />
-                  ) : field.required ? (
-                    <AlertCircle className="w-5 h-5 text-red-600" />
-                  ) : (
-                    <div className="w-5 h-5" />
-                  )}
-                </div>
+                  );
+                })}
               </div>
-            ))}
+            </div>
           </div>
 
           {!requiredFieldsMapped && (
@@ -257,7 +404,7 @@ const DataPreviewMapping: React.FC<DataPreviewMappingProps> = ({
                 <span className="font-medium text-yellow-800">Missing Required Fields</span>
               </div>
               <p className="text-sm text-yellow-700 mt-1">
-                Please map all required fields before proceeding to the next step.
+                Please accept AI suggestions or manually map all required fields before proceeding.
               </p>
             </div>
           )}
@@ -275,28 +422,28 @@ const DataPreviewMapping: React.FC<DataPreviewMappingProps> = ({
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
-              <table className="w-full border-collapse border border-gray-300">
-                <thead>
-                  <tr className="bg-gray-50">
+              <Table>
+                <TableHeader>
+                  <TableRow>
                     {Object.keys(importData.fieldMappings).map((standardField) => (
-                      <th key={standardField} className="border border-gray-300 px-4 py-2 text-left">
+                      <TableHead key={standardField}>
                         {standardFields.find(f => f.key === standardField)?.label || standardField}
-                      </th>
+                      </TableHead>
                     ))}
-                  </tr>
-                </thead>
-                <tbody>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {importData.mappedData.slice(0, 3).map((row, index) => (
-                    <tr key={index}>
+                    <TableRow key={index}>
                       {Object.keys(importData.fieldMappings).map((standardField) => (
-                        <td key={standardField} className="border border-gray-300 px-4 py-2">
+                        <TableCell key={standardField}>
                           {String(row[standardField] || '')}
-                        </td>
+                        </TableCell>
                       ))}
-                    </tr>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
               {importData.mappedData.length > 3 && (
                 <p className="text-sm text-muted-foreground mt-2">
                   ... and {importData.mappedData.length - 3} more records
