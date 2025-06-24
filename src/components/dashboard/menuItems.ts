@@ -31,8 +31,6 @@ export const menuItems = [
     url: "/dashboard/users",
     items: [
       { title: "User Directory", url: "/dashboard/users" },
-      { title: "Account Status", url: "/dashboard/users/status" },
-      { title: "Permissions", url: "/dashboard/users/permissions" },
     ]
   },
   {

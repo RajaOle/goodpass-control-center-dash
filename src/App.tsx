@@ -29,8 +29,6 @@ const App = () => (
           <Route path="/dashboard" element={<DashboardLayout />}>
             <Route index element={<Dashboard />} />
             <Route path="users" element={<UserManagement />} />
-            <Route path="users/status" element={<UserManagement />} />
-            <Route path="users/permissions" element={<UserManagement />} />
             <Route path="financial" element={<FinancialReputation />} />
             <Route path="financial/history" element={<FinancialReputation />} />
             <Route path="financial/settings" element={<FinancialReputation />} />
