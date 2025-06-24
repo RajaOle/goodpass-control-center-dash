@@ -95,7 +95,7 @@ const DataPreviewMapping: React.FC<DataPreviewMappingProps> = ({
       const autoAcceptedSuggestions = suggestions.filter(s => s.confidence > 0.9);
       const updatedSuggestions = suggestions.map(s => ({
         ...s,
-        status: s.confidence > 0.9 ? 'accepted' as const : 'pending' as const
+        status: (s.confidence > 0.9 ? 'accepted' : 'pending') as const
       }));
 
       // Update field mappings for auto-accepted suggestions
@@ -287,7 +287,7 @@ const DataPreviewMapping: React.FC<DataPreviewMappingProps> = ({
             AI Field Mapping Assistant
           </CardTitle>
           <CardDescription>
-            AI analyzes your data and suggests field mappings. High-confidence matches (>90%) are auto-accepted.
+            AI analyzes your data and suggests field mappings. High-confidence matches ({'>'}90%) are auto-accepted.
           </CardDescription>
         </CardHeader>
         <CardContent>
