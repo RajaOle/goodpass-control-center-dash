@@ -30,7 +30,7 @@ export const menuItems = [
     url: "/dashboard/moderation",
     items: [
       { title: "Pending Reviews", url: "/dashboard/moderation" },
-      { title: "Flagged Content", url: "/dashboard/moderation/flagged" },
+      { title: "Import Report", url: "/dashboard/moderation/import" },
       { title: "Moderation History", url: "/dashboard/moderation/history" },
     ]
   },
