@@ -43,7 +43,7 @@ const VerificationControls: React.FC<VerificationControlsProps> = ({
               </Label>
               <p className="text-sm text-muted-foreground">
                 {verificationEnabled 
-                  ? "Verify both Reporter AND Reportee manually"
+                  ? "AI will replace manual verification for both Reporter AND Reportee"
                   : "Verify only Reporter manually"
                 }
               </p>
@@ -94,7 +94,7 @@ const VerificationControls: React.FC<VerificationControlsProps> = ({
                   Full Verification Mode Active
                 </p>
                 <p className="text-sm text-blue-700">
-                  • Both Reporter and Reportee will be manually verified<br />
+                  • AI will replace manual verification for both Reporter and Reportee<br />
                   • Reports can achieve "Verified" status<br />
                   • AI assistance is available to help with verification decisions
                 </p>
