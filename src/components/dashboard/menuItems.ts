@@ -41,7 +41,6 @@ export const menuItems = [
     url: "/dashboard/settings",
     items: [
       { title: "General Settings", url: "/dashboard/settings" },
-      { title: "User Preferences", url: "/dashboard/settings/preferences" },
       { title: "System Configuration", url: "/dashboard/settings/system" },
     ]
   },
