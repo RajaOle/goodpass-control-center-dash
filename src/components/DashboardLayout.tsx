@@ -89,7 +89,7 @@ const menuItems = [
     ]
   },
   {
-    title: "Peer Review Moderation",
+    title: "Manage Report",
     icon: MessageSquare,
     url: "/dashboard/moderation",
     items: [
