@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart3, Users, Eye, TrendingUp } from 'lucide-react';
+import { BarChart3, Users, FileText, CheckCircle, TrendingUp } from 'lucide-react';
 
 const Dashboard = () => {
   const stats = [
@@ -15,21 +15,21 @@ const Dashboard = () => {
       textColor: "text-white",
     },
     {
-      title: "Pageviews",
-      value: "245,600",
-      change: "+2.8%",
+      title: "Total Pending reports",
+      value: "1,247",
+      change: "+12.4%",
       description: "from last month",
-      icon: Eye,
-      color: "bg-gradient-to-br from-emerald-500 to-emerald-600",
+      icon: FileText,
+      color: "bg-gradient-to-br from-orange-400 to-orange-500",
       textColor: "text-white",
     },
     {
-      title: "Transaction Volume",
-      value: "$2.6M",
-      change: "+15.3%",
+      title: "Total Live reports",
+      value: "8,932",
+      change: "+7.2%",
       description: "from last month",
-      icon: BarChart3,
-      color: "bg-gradient-to-br from-orange-400 to-orange-500",
+      icon: CheckCircle,
+      color: "bg-gradient-to-br from-green-500 to-green-600",
       textColor: "text-white",
     },
   ];
