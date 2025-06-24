@@ -39,7 +39,6 @@ const App = () => (
             <Route path="moderation/import" element={<ImportReport />} />
             <Route path="moderation/history" element={<ModerationHistory />} />
             <Route path="settings" element={<Settings />} />
-            <Route path="settings/system" element={<Settings />} />
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
