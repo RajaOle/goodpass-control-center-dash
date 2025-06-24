@@ -218,6 +218,14 @@ const Moderation = () => {
     });
   };
 
+  const handleSearch = () => {
+    toast({
+      title: "Search Initiated",
+      description: `Searching for: "${searchTerm}"`,
+    });
+    console.log('Search initiated with term:', searchTerm);
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -278,6 +286,7 @@ const Moderation = () => {
           <SearchBar
             value={searchTerm}
             onChange={setSearchTerm}
+            onSearch={handleSearch}
           />
           
           <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
