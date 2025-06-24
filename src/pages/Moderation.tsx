@@ -83,9 +83,7 @@ const Moderation = () => {
       <Card>
         <CardHeader>
           <CardTitle>Recent Moderation Queue</CardTitle>
-          <CardDescription>
-            Content requiring moderator attention
-          </CardDescription>
+          <CardDescription>Reports Requires Review</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
