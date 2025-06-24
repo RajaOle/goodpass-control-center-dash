@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -95,7 +94,7 @@ const DataPreviewMapping: React.FC<DataPreviewMappingProps> = ({
       const autoAcceptedSuggestions = suggestions.filter(s => s.confidence > 0.9);
       const updatedSuggestions = suggestions.map(s => ({
         ...s,
-        status: (s.confidence > 0.9 ? 'accepted' : 'pending') as const
+        status: s.confidence > 0.9 ? 'accepted' as const : 'pending' as const
       }));
 
       // Update field mappings for auto-accepted suggestions
