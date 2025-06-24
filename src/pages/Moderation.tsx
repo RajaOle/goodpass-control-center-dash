@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,10 @@ import { useToast } from '@/hooks/use-toast';
 import AdminPinDialog from '@/components/AdminPinDialog';
 import VerificationControls from '@/components/VerificationControls';
 import ReportsPagination from '@/components/ReportsPagination';
+import SearchBar from '@/components/SearchBar';
+import FilterControls from '@/components/FilterControls';
+import DateRangeFilter from '@/components/DateRangeFilter';
+import { useReportFilters } from '@/hooks/useReportFilters';
 
 const Moderation = () => {
   const { toast } = useToast();
@@ -126,15 +129,37 @@ const Moderation = () => {
     }
   ];
 
-  // Calculate pagination
-  const totalPages = Math.ceil(reportData.length / reportsPerPage);
+  // Initialize search and filter functionality
+  const {
+    searchTerm,
+    setSearchTerm,
+    filters,
+    handleFilterChange,
+    clearFilters,
+    startDate,
+    setStartDate,
+    endDate,
+    setEndDate,
+    clearDates,
+    clearAllFilters,
+    filteredReports,
+    hasActiveFilters,
+  } = useReportFilters(reportData);
+
+  // Calculate pagination for filtered results
+  const totalPages = Math.ceil(filteredReports.length / reportsPerPage);
   const paginatedReports = useMemo(() => {
     const startIndex = (currentPage - 1) * reportsPerPage;
     const endIndex = startIndex + reportsPerPage;
-    return reportData.slice(startIndex, endIndex);
-  }, [currentPage, reportsPerPage, reportData]);
+    return filteredReports.slice(startIndex, endIndex);
+  }, [filteredReports, currentPage, reportsPerPage]);
 
-  // Statistics calculations
+  // Reset to page 1 when filters change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filters, startDate, endDate]);
+
+  // Statistics calculations based on original data
   const pendingReports = reportData.filter(report => report.reportStatus === "Pending").length;
   const partiallyVerifiedReports = reportData.filter(report => report.verificationStatus === "Partially Verified").length;
 
@@ -241,106 +266,168 @@ const Moderation = () => {
         </Card>
       </div>
 
+      {/* Search and Filter Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Search & Filter Reports</CardTitle>
+          <CardDescription>
+            Use the controls below to find specific reports
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <SearchBar
+            value={searchTerm}
+            onChange={setSearchTerm}
+          />
+          
+          <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+            <FilterControls
+              filters={filters}
+              onFilterChange={handleFilterChange}
+              onClearFilters={clearFilters}
+            />
+            
+            <DateRangeFilter
+              startDate={startDate}
+              endDate={endDate}
+              onStartDateChange={setStartDate}
+              onEndDateChange={setEndDate}
+              onClearDates={clearDates}
+            />
+          </div>
+
+          {hasActiveFilters && (
+            <div className="flex items-center justify-between pt-2 border-t">
+              <p className="text-sm text-muted-foreground">
+                Showing {filteredReports.length} of {reportData.length} reports
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={clearAllFilters}
+              >
+                Clear All Filters
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>Recent Moderation Queue</CardTitle>
           <CardDescription>
-            Reports Requiring Review (Page {currentPage} of {totalPages})
+            Reports Requiring Review (Page {currentPage} of {totalPages || 1})
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-6">
-            {paginatedReports.map(report => (
-              <div key={report.id} className="p-6 border rounded-lg bg-gray-50 relative">
-                {/* Reporter Status Badge */}
-                <div className="absolute top-4 right-4">
-                  <Badge 
-                    variant={report.reporterStatus === "individual" ? "default" : "secondary"}
-                    className={report.reporterStatus === "individual" ? "bg-green-500 hover:bg-green-600" : "bg-blue-500 hover:bg-blue-600"}
-                  >
-                    {report.reporterStatus === "individual" ? "Individual" : "Business"}
-                  </Badge>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 pr-20">
-                  <div className="space-y-3">
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">Report Type</label>
-                      <p className="text-sm text-gray-900">{report.reportType}</p>
+          {filteredReports.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">No reports found matching your criteria.</p>
+              {hasActiveFilters && (
+                <Button
+                  variant="outline"
+                  onClick={clearAllFilters}
+                  className="mt-2"
+                >
+                  Clear All Filters
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {paginatedReports.map(report => (
+                <div key={report.id} className="p-6 border rounded-lg bg-gray-50 relative">
+                  {/* Reporter Status Badge */}
+                  <div className="absolute top-4 right-4">
+                    <Badge 
+                      variant={report.reporterStatus === "individual" ? "default" : "secondary"}
+                      className={report.reporterStatus === "individual" ? "bg-green-500 hover:bg-green-600" : "bg-blue-500 hover:bg-blue-600"}
+                    >
+                      {report.reporterStatus === "individual" ? "Individual" : "Business"}
+                    </Badge>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 pr-20">
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">Report Type</label>
+                        <p className="text-sm text-gray-900">{report.reportType}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">Report Unique ID</label>
+                        <p className="text-sm text-gray-900">{report.uniqueId}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">Initial Amount</label>
+                        <p className="text-sm text-gray-900">{report.initialAmount}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">Outstanding Amount</label>
+                        <p className="text-sm text-gray-900">{report.outstandingAmount}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">Repayment Type</label>
+                        <p className="text-sm text-gray-900">{report.repaymentType}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">Last Repayment Date</label>
+                        <p className="text-sm text-gray-900">{report.lastRepaymentDate}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">Reporter Name</label>
+                        <p className="text-sm text-gray-900">{report.reporterName}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">Reporter Phone Number</label>
+                        <p className="text-sm text-gray-900">{report.reporterPhone}</p>
+                      </div>
                     </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">Report Unique ID</label>
-                      <p className="text-sm text-gray-900">{report.uniqueId}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">Initial Amount</label>
-                      <p className="text-sm text-gray-900">{report.initialAmount}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">Outstanding Amount</label>
-                      <p className="text-sm text-gray-900">{report.outstandingAmount}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">Repayment Type</label>
-                      <p className="text-sm text-gray-900">{report.repaymentType}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">Last Repayment Date</label>
-                      <p className="text-sm text-gray-900">{report.lastRepaymentDate}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">Reporter Name</label>
-                      <p className="text-sm text-gray-900">{report.reporterName}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">Reporter Phone Number</label>
-                      <p className="text-sm text-gray-900">{report.reporterPhone}</p>
+                    
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">Report Status</label>
+                        <div className="mt-1">
+                          <Badge variant={report.reportStatus === "Active" ? "default" : "secondary"}>
+                            {report.reportStatus}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">Verification Status</label>
+                        <div className="mt-1">
+                          <Badge variant={report.verificationStatus === "Verified" ? "default" : "outline"}>
+                            {report.verificationStatus}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">Reportee Name</label>
+                        <p className="text-sm text-gray-900">{report.reporteeName}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">Reportee Phone Number</label>
+                        <p className="text-sm text-gray-900">{report.reporteePhone}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">Collateral Information</label>
+                        <p className="text-sm text-gray-900">{report.collateralInfo}</p>
+                      </div>
                     </div>
                   </div>
                   
-                  <div className="space-y-3">
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">Report Status</label>
-                      <div className="mt-1">
-                        <Badge variant={report.reportStatus === "Active" ? "default" : "secondary"}>
-                          {report.reportStatus}
-                        </Badge>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">Verification Status</label>
-                      <div className="mt-1">
-                        <Badge variant={report.verificationStatus === "Verified" ? "default" : "outline"}>
-                          {report.verificationStatus}
-                        </Badge>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">Reportee Name</label>
-                      <p className="text-sm text-gray-900">{report.reporteeName}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">Reportee Phone Number</label>
-                      <p className="text-sm text-gray-900">{report.reporteePhone}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">Collateral Information</label>
-                      <p className="text-sm text-gray-900">{report.collateralInfo}</p>
-                    </div>
+                  <div className="flex justify-end pt-4 border-t">
+                    <Button 
+                      size="sm" 
+                      onClick={() => handleProcessReport(report.id)}
+                    >
+                      Process
+                    </Button>
                   </div>
                 </div>
-                
-                <div className="flex justify-end pt-4 border-t">
-                  <Button 
-                    size="sm" 
-                    onClick={() => handleProcessReport(report.id)}
-                  >
-                    Process
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
           
           {totalPages > 1 && (
             <div className="flex justify-center mt-6">
