@@ -18,8 +18,6 @@ import { Button } from '@/components/ui/button';
 import {
   BarChart3,
   Users,
-  CreditCard,
-  Shield,
   MessageSquare,
   Megaphone,
   Settings,
@@ -64,26 +62,6 @@ const menuItems = [
       { title: "User Directory", url: "/dashboard/users" },
       { title: "Account Status", url: "/dashboard/users/status" },
       { title: "Permissions", url: "/dashboard/users/permissions" },
-    ]
-  },
-  {
-    title: "Financial Reputation",
-    icon: CreditCard,
-    url: "/dashboard/financial",
-    items: [
-      { title: "Reputation Scores", url: "/dashboard/financial" },
-      { title: "Score History", url: "/dashboard/financial/history" },
-      { title: "Algorithm Settings", url: "/dashboard/financial/settings" },
-    ]
-  },
-  {
-    title: "KYC/KYB Verification",
-    icon: Shield,
-    url: "/dashboard/verification",
-    items: [
-      { title: "Pending Verifications", url: "/dashboard/verification" },
-      { title: "Completed Verifications", url: "/dashboard/verification/completed" },
-      { title: "Rejected Applications", url: "/dashboard/verification/rejected" },
     ]
   },
   {
