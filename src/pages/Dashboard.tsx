@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart3, Users, Eye, Activity, TrendingUp, Rocket, Shield } from 'lucide-react';
+import { BarChart3, Users, Eye, TrendingUp } from 'lucide-react';
 
 const Dashboard = () => {
   const stats = [
@@ -122,59 +123,6 @@ const Dashboard = () => {
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-3">
-        <Card className="shadow-sm border-0 bg-white">
-          <CardHeader className="text-center py-8">
-            <div className="mx-auto w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
-              <Rocket className="h-6 w-6 text-blue-600" />
-            </div>
-            <CardTitle className="text-xl font-semibold text-slate-800">Quick Actions</CardTitle>
-            <CardDescription className="text-slate-600">
-              Manage your platform efficiently
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <button className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors">
-              Create Announcement
-            </button>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-sm border-0 bg-white">
-          <CardHeader className="text-center py-8">
-            <div className="mx-auto w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center mb-4">
-              <Shield className="h-6 w-6 text-emerald-600" />
-            </div>
-            <CardTitle className="text-xl font-semibold text-slate-800">Security Center</CardTitle>
-            <CardDescription className="text-slate-600">
-              Monitor system security
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <button className="w-full bg-emerald-600 text-white py-3 rounded-lg font-medium hover:bg-emerald-700 transition-colors">
-              View Security Logs
-            </button>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-sm border-0 bg-white">
-          <CardHeader className="text-center py-8">
-            <div className="mx-auto w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4">
-              <Activity className="h-6 w-6 text-orange-600" />
-            </div>
-            <CardTitle className="text-xl font-semibold text-slate-800">System Health</CardTitle>
-            <CardDescription className="text-slate-600">
-              Monitor platform performance
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <button className="w-full bg-orange-600 text-white py-3 rounded-lg font-medium hover:bg-orange-700 transition-colors">
-              View Metrics
-            </button>
           </CardContent>
         </Card>
       </div>
