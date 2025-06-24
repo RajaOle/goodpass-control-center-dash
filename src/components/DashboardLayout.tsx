@@ -49,6 +49,16 @@ const menuItems = [
     ]
   },
   {
+    title: "Manage Report",
+    icon: MessageSquare,
+    url: "/dashboard/moderation",
+    items: [
+      { title: "Pending Reviews", url: "/dashboard/moderation" },
+      { title: "Flagged Content", url: "/dashboard/moderation/flagged" },
+      { title: "Moderation History", url: "/dashboard/moderation/history" },
+    ]
+  },
+  {
     title: "User Management",
     icon: Users,
     url: "/dashboard/users",
@@ -86,16 +96,6 @@ const menuItems = [
       { title: "System Logs", url: "/dashboard/activity" },
       { title: "User Actions", url: "/dashboard/activity/user-actions" },
       { title: "Security Events", url: "/dashboard/activity/security" },
-    ]
-  },
-  {
-    title: "Manage Report",
-    icon: MessageSquare,
-    url: "/dashboard/moderation",
-    items: [
-      { title: "Pending Reviews", url: "/dashboard/moderation" },
-      { title: "Flagged Content", url: "/dashboard/moderation/flagged" },
-      { title: "Moderation History", url: "/dashboard/moderation/history" },
     ]
   },
   {
