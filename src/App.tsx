@@ -13,6 +13,7 @@ import UserManagement from "./pages/UserManagement";
 import FinancialReputation from "./pages/FinancialReputation";
 import Verification from "./pages/Verification";
 import Moderation from "./pages/Moderation";
+import ModerationHistory from "./pages/ModerationHistory";
 import ImportReport from "./pages/ImportReport";
 import Announcements from "./pages/Announcements";
 import Settings from "./pages/Settings";
@@ -44,7 +45,7 @@ const App = () => (
             <Route path="verification/rejected" element={<Verification />} />
             <Route path="moderation" element={<Moderation />} />
             <Route path="moderation/import" element={<ImportReport />} />
-            <Route path="moderation/history" element={<Moderation />} />
+            <Route path="moderation/history" element={<ModerationHistory />} />
             <Route path="announcements" element={<Announcements />} />
             <Route path="announcements/scheduled" element={<Announcements />} />
             <Route path="announcements/history" element={<Announcements />} />
