@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart3, Users, CreditCard, Activity, TrendingUp, Eye, Rocket, Shield } from 'lucide-react';
+import { BarChart3, Users, Eye, Activity, TrendingUp, Rocket, Shield } from 'lucide-react';
 
 const Dashboard = () => {
   const stats = [
@@ -30,15 +29,6 @@ const Dashboard = () => {
       description: "from last month",
       icon: BarChart3,
       color: "bg-gradient-to-br from-orange-400 to-orange-500",
-      textColor: "text-white",
-    },
-    {
-      title: "Average Reputation Score",
-      value: "4.2",
-      change: "+0.3",
-      description: "from last month",
-      icon: CreditCard,
-      color: "bg-gradient-to-br from-purple-500 to-purple-600",
       textColor: "text-white",
     },
   ];
