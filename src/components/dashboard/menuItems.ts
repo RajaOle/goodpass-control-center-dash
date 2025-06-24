@@ -22,9 +22,6 @@ export const menuItems = [
     url: "/dashboard/analytics",
     items: [
       { title: "Overview", url: "/dashboard/analytics" },
-      { title: "User Growth", url: "/dashboard/analytics/user-growth" },
-      { title: "Transaction Volume", url: "/dashboard/analytics/transactions" },
-      { title: "Engagement Metrics", url: "/dashboard/analytics/engagement" },
     ]
   },
   {
