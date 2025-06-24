@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Shield, Zap, Lock } from 'lucide-react';
+import { Shield, Zap, Lock, Users, User } from 'lucide-react';
 
 interface VerificationControlsProps {
   verificationEnabled: boolean;
@@ -23,22 +23,29 @@ const VerificationControls: React.FC<VerificationControlsProps> = ({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Shield className="w-5 h-5" />
-          Verification Controls
+          Manual Verification Controls
         </CardTitle>
         <CardDescription>
-          Manage automated verification settings for incoming reports
+          Configure manual verification requirements for incoming reports
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="flex items-center justify-between space-x-4">
           <div className="flex items-center space-x-3">
-            <Shield className="w-5 h-5 text-blue-600" />
+            {verificationEnabled ? (
+              <Users className="w-5 h-5 text-blue-600" />
+            ) : (
+              <User className="w-5 h-5 text-orange-600" />
+            )}
             <div className="space-y-1">
               <Label htmlFor="verification-switch" className="text-sm font-medium">
-                Auto-Verification
+                Full Verification Mode
               </Label>
               <p className="text-sm text-muted-foreground">
-                Enable automatic verification of new reports
+                {verificationEnabled 
+                  ? "Verify both Reporter AND Reportee manually"
+                  : "Verify only Reporter manually"
+                }
               </p>
             </div>
           </div>
@@ -60,10 +67,13 @@ const VerificationControls: React.FC<VerificationControlsProps> = ({
                 htmlFor="ai-assist-switch" 
                 className={`text-sm font-medium ${!verificationEnabled ? 'text-muted-foreground' : ''}`}
               >
-                AI-Assisted Verification
+                AI-Assisted Manual Verification
               </Label>
               <p className="text-sm text-muted-foreground">
-                Use AI to help with verification decisions
+                {verificationEnabled 
+                  ? "AI provides suggestions during manual verification"
+                  : "AI assistance unavailable in Reporter-only mode"
+                }
               </p>
             </div>
           </div>
@@ -76,10 +86,39 @@ const VerificationControls: React.FC<VerificationControlsProps> = ({
         </div>
 
         {verificationEnabled && (
-          <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-            <p className="text-sm text-green-800">
-              ✓ Verification system is active. New reports will be processed automatically.
-            </p>
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-start space-x-3">
+              <Users className="w-5 h-5 text-blue-600 mt-0.5" />
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-blue-800">
+                  Full Verification Mode Active
+                </p>
+                <p className="text-sm text-blue-700">
+                  • Both Reporter and Reportee will be manually verified<br />
+                  • Reports can achieve "Verified" status<br />
+                  • AI assistance is available to help with verification decisions
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!verificationEnabled && (
+          <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+            <div className="flex items-start space-x-3">
+              <User className="w-5 h-5 text-orange-600 mt-0.5" />
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-orange-800">
+                  Reporter-Only Verification Mode
+                </p>
+                <p className="text-sm text-orange-700">
+                  • Only Reporter will be manually verified<br />
+                  • Reports with complete documents get "Partially Verified" status<br />
+                  • Reports automatically go live when partially verified<br />
+                  • AI assistance is disabled in this mode
+                </p>
+              </div>
+            </div>
           </div>
         )}
       </CardContent>
