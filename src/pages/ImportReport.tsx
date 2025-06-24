@@ -117,13 +117,37 @@ const ImportReport = () => {
         </p>
       </div>
 
-      {/* Progress Indicator */}
+      {/* Progress Indicator with Navigation Buttons */}
       <Card>
         <CardContent className="pt-6">
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium">Step {currentStep} of {totalSteps}</span>
-              <span className="text-sm text-muted-foreground">{Math.round(progress)}% Complete</span>
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-muted-foreground">{Math.round(progress)}% Complete</span>
+                
+                {/* Navigation Buttons - Now positioned in top right */}
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handlePrevious}
+                    disabled={currentStep === 1}
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-1" />
+                    Previous
+                  </Button>
+                  
+                  <Button
+                    size="sm"
+                    onClick={handleNext}
+                    disabled={currentStep === totalSteps || !canProceedToNextStep()}
+                  >
+                    {currentStep === totalSteps ? 'Complete Import' : 'Next'}
+                    {currentStep !== totalSteps && <ArrowRight className="w-4 h-4 ml-1" />}
+                  </Button>
+                </div>
+              </div>
             </div>
             <Progress value={progress} className="w-full" />
             
@@ -163,26 +187,6 @@ const ImportReport = () => {
       {/* Main Content */}
       <div className="min-h-[600px]">
         {renderCurrentStep()}
-      </div>
-
-      {/* Navigation Buttons */}
-      <div className="flex justify-between">
-        <Button
-          variant="outline"
-          onClick={handlePrevious}
-          disabled={currentStep === 1}
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Previous
-        </Button>
-        
-        <Button
-          onClick={handleNext}
-          disabled={currentStep === totalSteps || !canProceedToNextStep()}
-        >
-          {currentStep === totalSteps ? 'Complete Import' : 'Next'}
-          {currentStep !== totalSteps && <ArrowRight className="w-4 h-4 ml-2" />}
-        </Button>
       </div>
     </div>
   );
