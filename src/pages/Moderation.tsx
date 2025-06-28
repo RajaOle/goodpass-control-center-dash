@@ -10,6 +10,8 @@ import SearchBar from '@/components/SearchBar';
 import FilterControls from '@/components/FilterControls';
 import DateRangeFilter from '@/components/DateRangeFilter';
 import { useReportFilters } from '@/hooks/useReportFilters';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const Moderation = () => {
   const { toast } = useToast();
@@ -163,6 +165,12 @@ const Moderation = () => {
   const pendingReports = reportData.filter(report => report.reportStatus === "Pending").length;
   const partiallyVerifiedReports = reportData.filter(report => report.verificationStatus === "Partially Verified").length;
 
+  // New state for processing modal
+  const [processingReport, setProcessingReport] = useState(null);
+  const [reporterVerification, setReporterVerification] = useState('unverified');
+  const [reporteeVerification, setReporteeVerification] = useState('unverified');
+  const [isProcessingModalOpen, setIsProcessingModalOpen] = useState(false);
+
   const handleVerificationToggle = (checked: boolean) => {
     if (!checked && verificationEnabled) {
       // Deactivating requires PIN
@@ -211,11 +219,38 @@ const Moderation = () => {
     setCurrentPage(page);
   };
 
-  const handleProcessReport = (reportId: number) => {
+  const handleProcessReport = (reportId) => {
+    // Find the report to process
+    const report = paginatedReports.find(r => r.id === reportId);
+    setProcessingReport(report);
+    setReporterVerification('unverified');
+    setReporteeVerification('unverified');
+    setIsProcessingModalOpen(true);
+  };
+
+  const handleSubmitVerification = () => {
+    if (!processingReport) return;
+
+    // Determine new verification status
+    let newVerificationStatus = 'Partially Verified';
+    if (reporterVerification === 'verified' && reporteeVerification === 'verified') {
+      newVerificationStatus = 'Verified';
+    }
+
+    // Simulate sending to backend and updating local state
     toast({
-      title: "Processing Report",
-      description: `Processing report with ID: ${reportId}`,
+      title: "Report Processed",
+      description: `Report ${processingReport.uniqueId} is now Live/Active and ${newVerificationStatus}`,
     });
+
+    // Here you would send the updated data to the backend
+
+    // Update local data (for demo, you may want to update state or refetch)
+    processingReport.reportStatus = 'Active';
+    processingReport.verificationStatus = newVerificationStatus;
+
+    setIsProcessingModalOpen(false);
+    setProcessingReport(null);
   };
 
   const handleSearch = () => {
@@ -429,6 +464,7 @@ const Moderation = () => {
                     <Button 
                       size="sm" 
                       onClick={() => handleProcessReport(report.id)}
+                      disabled={report.reportStatus !== "Pending"}
                     >
                       Process
                     </Button>
@@ -455,6 +491,97 @@ const Moderation = () => {
         onClose={handlePinClose}
         onSuccess={handlePinSuccess}
       />
+
+      {/* Processing Modal */}
+      <Dialog open={isProcessingModalOpen} onOpenChange={setIsProcessingModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Process Report</DialogTitle>
+          </DialogHeader>
+          {processingReport && (
+            <div className="space-y-6">
+              {/* Section 1: Reporter Information */}
+              <div>
+                <h3 className="font-semibold mb-2">Reporter Information</h3>
+                <div>Name: {processingReport.reporterName}</div>
+                <div>Phone: {processingReport.reporterPhone}</div>
+                <div>Status: {processingReport.reporterStatus}</div>
+                <div>
+                  <RadioGroup
+                    value={reporterVerification}
+                    onValueChange={setReporterVerification}
+                    className="flex gap-4 mt-2"
+                  >
+                    <RadioGroupItem value="verified" id="reporter-verified" />
+                    <label htmlFor="reporter-verified">Verified</label>
+                    <RadioGroupItem value="unverified" id="reporter-unverified" />
+                    <label htmlFor="reporter-unverified">Not Verified</label>
+                  </RadioGroup>
+                </div>
+              </div>
+              {/* Section 2: Reportee Information */}
+              <div>
+                <h3 className="font-semibold mb-2">Reportee Information</h3>
+                <div>Name: {processingReport.reporteeName}</div>
+                <div>Phone: {processingReport.reporteePhone}</div>
+                <div>
+                  <RadioGroup
+                    value={reporteeVerification}
+                    onValueChange={setReporteeVerification}
+                    className="flex gap-4 mt-2"
+                  >
+                    <RadioGroupItem value="verified" id="reportee-verified" />
+                    <label htmlFor="reportee-verified">Verified</label>
+                    <RadioGroupItem value="unverified" id="reportee-unverified" />
+                    <label htmlFor="reportee-unverified">Not Verified</label>
+                  </RadioGroup>
+                </div>
+              </div>
+              {/* Section 3: Loan Information */}
+              <div>
+                <h3 className="font-semibold mb-2">Loan Information</h3>
+                <div>Type: {processingReport.reportType}</div>
+                <div>Initial Amount: {processingReport.initialAmount}</div>
+                <div>Outstanding Amount: {processingReport.outstandingAmount}</div>
+                <div>Repayment Type: {processingReport.repaymentType}</div>
+                <div>Last Repayment Date: {processingReport.lastRepaymentDate}</div>
+              </div>
+              {/* Section 4: Supporting Documents */}
+              <div className="bg-gray-50 rounded-lg p-4 shadow-sm">
+                <h3 className="font-semibold mb-2 text-gray-800">Supporting Documents</h3>
+                {processingReport.supportingDocuments && processingReport.supportingDocuments.length > 0 ? (
+                  <div className="space-y-2">
+                    {processingReport.supportingDocuments.map((doc, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        {doc.type === 'image' ? (
+                          <a href={doc.url} target="_blank" rel="noopener noreferrer">
+                            <img src={doc.url} alt={doc.name} className="h-12 w-12 object-cover rounded border hover:scale-105 transition-transform" />
+                          </a>
+                        ) : (
+                          <a href={doc.url} target="_blank" rel="noopener noreferrer" className="text-blue-700 underline flex items-center gap-1">
+                            <span className="material-icons">description</span>
+                            {doc.name}
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-sm text-gray-700">{processingReport.collateralInfo}</div>
+                )}
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={handleSubmitVerification} disabled={!processingReport}>
+              Submit
+            </Button>
+            <Button variant="outline" onClick={() => setIsProcessingModalOpen(false)}>
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

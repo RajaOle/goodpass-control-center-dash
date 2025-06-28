@@ -1,16 +1,33 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from '@/components/ui/table';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
-import { Search, Users } from 'lucide-react';
+import { Search, Users, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { UserFilters } from '@/components/user-management/UserFilters';
 import { UserTableRow } from '@/components/user-management/UserTableRow';
+import { KYCReviewModal } from '@/components/user-management/KYCReviewModal';
+
+interface UserData {
+  id: string;
+  name: string;
+  email: string;
+  registrationDate: string;
+  isReporter: boolean;
+  isReportee: boolean;
+  totalReports: number;
+  verifiedReports: number;
+  unverifiedReports: number;
+  complaints: number;
+  gpScore: number;
+  status: 'active' | 'suspended' | 'deactivated';
+  kycStatus?: 'pending' | 'verified' | 'rejected';
+  kycDocuments?: { name: string; url: string; type: string }[];
+}
 
 // Sample data - in real app this would come from API
-const sampleUsers = [
+const sampleUsers: UserData[] = [
   {
     id: '1',
     name: 'John Smith',
@@ -23,7 +40,13 @@ const sampleUsers = [
     unverifiedReports: 2,
     complaints: 0,
     gpScore: 85,
-    status: 'active' as const,
+    status: 'active',
+    kycStatus: 'verified',
+    kycDocuments: [
+      { name: 'ID Card Front', url: '/placeholder.svg', type: 'image' },
+      { name: 'ID Card Back', url: '/placeholder.svg', type: 'image' },
+      { name: 'Proof of Address', url: '/placeholder.svg', type: 'image' }
+    ]
   },
   {
     id: '2',
@@ -37,7 +60,12 @@ const sampleUsers = [
     unverifiedReports: 2,
     complaints: 8,
     gpScore: 25,
-    status: 'suspended' as const,
+    status: 'suspended',
+    kycStatus: 'pending',
+    kycDocuments: [
+      { name: 'Passport', url: '/placeholder.svg', type: 'image' },
+      { name: 'Bank Statement', url: '/placeholder.svg', type: 'image' }
+    ]
   },
   {
     id: '3',
@@ -51,7 +79,12 @@ const sampleUsers = [
     unverifiedReports: 2,
     complaints: 2,
     gpScore: 68,
-    status: 'active' as const,
+    status: 'active',
+    kycStatus: 'rejected',
+    kycDocuments: [
+      { name: 'Driver License', url: '/placeholder.svg', type: 'image' },
+      { name: 'Utility Bill', url: '/placeholder.svg', type: 'image' }
+    ]
   },
   {
     id: '4',
@@ -65,7 +98,12 @@ const sampleUsers = [
     unverifiedReports: 2,
     complaints: 1,
     gpScore: 92,
-    status: 'active' as const,
+    status: 'active',
+    kycStatus: 'verified',
+    kycDocuments: [
+      { name: 'National ID', url: '/placeholder.svg', type: 'image' },
+      { name: 'Employment Letter', url: '/placeholder.svg', type: 'image' }
+    ]
   },
   {
     id: '5',
@@ -79,7 +117,11 @@ const sampleUsers = [
     unverifiedReports: 0,
     complaints: 12,
     gpScore: 15,
-    status: 'deactivated' as const,
+    status: 'deactivated',
+    kycStatus: 'pending',
+    kycDocuments: [
+      { name: 'Government ID', url: '/placeholder.svg', type: 'image' }
+    ]
   },
 ];
 
@@ -88,8 +130,11 @@ const UserManagement = () => {
   const [userTypeFilter, setUserTypeFilter] = useState('all');
   const [gpScoreFilter, setGpScoreFilter] = useState('all');
   const [complaintFilter, setComplaintFilter] = useState('all');
+  const [kycStatusFilter, setKycStatusFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
-  const [users, setUsers] = useState(sampleUsers);
+  const [users, setUsers] = useState<UserData[]>(sampleUsers);
+  const [kycModalOpen, setKycModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
 
   const usersPerPage = 10;
 
@@ -97,6 +142,40 @@ const UserManagement = () => {
     console.log(`Action: ${action} for user: ${userId}`);
     // Here you would implement the actual action logic
     // For now, just log the action
+  };
+
+  const handleViewKyc = (userId: string) => {
+    const user = users.find(u => u.id === userId);
+    if (user) {
+      setSelectedUser(user);
+      setKycModalOpen(true);
+    }
+  };
+
+  const handleKycApprove = async (userId: string, notes?: string) => {
+    console.log(`Approving KYC for user ${userId} with notes: ${notes}`);
+    // Update user KYC status
+    setUsers(prevUsers => 
+      prevUsers.map(user => 
+        user.id === userId 
+          ? { ...user, kycStatus: 'verified' }
+          : user
+      )
+    );
+    // Here you would make an API call to update the KYC status
+  };
+
+  const handleKycReject = async (userId: string, reason: string) => {
+    console.log(`Rejecting KYC for user ${userId} with reason: ${reason}`);
+    // Update user KYC status
+    setUsers(prevUsers => 
+      prevUsers.map(user => 
+        user.id === userId 
+          ? { ...user, kycStatus: 'rejected' }
+          : user
+      )
+    );
+    // Here you would make an API call to update the KYC status
   };
 
   const handleExport = () => {
@@ -125,7 +204,13 @@ const UserManagement = () => {
                              (complaintFilter === 'low' && user.complaints >= 1 && user.complaints <= 5) ||
                              (complaintFilter === 'high' && user.complaints > 5);
 
-    return matchesSearch && matchesUserType && matchesGpScore && matchesComplaints;
+    const matchesKycStatus = kycStatusFilter === 'all' ||
+                            (kycStatusFilter === 'pending' && user.kycStatus === 'pending') ||
+                            (kycStatusFilter === 'verified' && user.kycStatus === 'verified') ||
+                            (kycStatusFilter === 'rejected' && user.kycStatus === 'rejected') ||
+                            (kycStatusFilter === 'none' && !user.kycStatus);
+
+    return matchesSearch && matchesUserType && matchesGpScore && matchesComplaints && matchesKycStatus;
   });
 
   const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
@@ -137,6 +222,73 @@ const UserManagement = () => {
       <div className="bg-white rounded-lg p-6 shadow-sm border">
         <h1 className="text-3xl font-bold text-slate-800 mb-2">User Management</h1>
         <p className="text-slate-600">Comprehensive user account management and analytics.</p>
+      </div>
+
+      {/* KYC Status Summary */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card className="shadow-sm border-0 bg-white">
+          <CardContent className="pt-6">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-yellow-100 rounded-lg">
+                <Clock className="h-5 w-5 text-yellow-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-600">Pending KYC</p>
+                <p className="text-2xl font-bold text-yellow-600">
+                  {users.filter(u => u.kycStatus === 'pending').length}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm border-0 bg-white">
+          <CardContent className="pt-6">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <CheckCircle className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-600">Verified KYC</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {users.filter(u => u.kycStatus === 'verified').length}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm border-0 bg-white">
+          <CardContent className="pt-6">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-red-100 rounded-lg">
+                <XCircle className="h-5 w-5 text-red-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-600">Rejected KYC</p>
+                <p className="text-2xl font-bold text-red-600">
+                  {users.filter(u => u.kycStatus === 'rejected').length}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm border-0 bg-white">
+          <CardContent className="pt-6">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-gray-100 rounded-lg">
+                <Users className="h-5 w-5 text-gray-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-600">Total Users</p>
+                <p className="text-2xl font-bold text-gray-600">
+                  {users.length}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <Card className="shadow-sm border-0 bg-white">
@@ -170,9 +322,11 @@ const UserManagement = () => {
             userTypeFilter={userTypeFilter}
             gpScoreFilter={gpScoreFilter}
             complaintFilter={complaintFilter}
+            kycStatusFilter={kycStatusFilter}
             onUserTypeChange={setUserTypeFilter}
             onGpScoreChange={setGpScoreFilter}
             onComplaintChange={setComplaintFilter}
+            onKycStatusChange={setKycStatusFilter}
             onExport={handleExport}
           />
           
@@ -186,6 +340,7 @@ const UserManagement = () => {
                   <TableHead className="font-semibold text-slate-700">Complaints</TableHead>
                   <TableHead className="font-semibold text-slate-700">GP Score</TableHead>
                   <TableHead className="font-semibold text-slate-700">Status</TableHead>
+                  <TableHead className="font-semibold text-slate-700">KYC</TableHead>
                   <TableHead className="font-semibold text-slate-700">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -196,11 +351,12 @@ const UserManagement = () => {
                       key={user.id}
                       user={user}
                       onAction={handleAction}
+                      onViewKyc={() => handleViewKyc(user.id)}
                     />
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-slate-500">
+                    <TableCell colSpan={8} className="text-center py-8 text-slate-500">
                       <Users className="h-12 w-12 mx-auto mb-3 text-slate-300" />
                       <p>No users found matching your criteria</p>
                     </TableCell>
@@ -247,6 +403,18 @@ const UserManagement = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* KYC Review Modal */}
+      <KYCReviewModal
+        isOpen={kycModalOpen}
+        onClose={() => {
+          setKycModalOpen(false);
+          setSelectedUser(null);
+        }}
+        user={selectedUser}
+        onApprove={handleKycApprove}
+        onReject={handleKycReject}
+      />
     </div>
   );
 };

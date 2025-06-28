@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -8,9 +7,11 @@ interface UserFiltersProps {
   userTypeFilter: string;
   gpScoreFilter: string;
   complaintFilter: string;
+  kycStatusFilter: string;
   onUserTypeChange: (value: string) => void;
   onGpScoreChange: (value: string) => void;
   onComplaintChange: (value: string) => void;
+  onKycStatusChange: (value: string) => void;
   onExport: () => void;
 }
 
@@ -18,9 +19,11 @@ export const UserFilters: React.FC<UserFiltersProps> = ({
   userTypeFilter,
   gpScoreFilter,
   complaintFilter,
+  kycStatusFilter,
   onUserTypeChange,
   onGpScoreChange,
   onComplaintChange,
+  onKycStatusChange,
   onExport,
 }) => {
   return (
@@ -64,6 +67,19 @@ export const UserFilters: React.FC<UserFiltersProps> = ({
           <SelectItem value="none">No Complaints</SelectItem>
           <SelectItem value="low">1-5 Complaints</SelectItem>
           <SelectItem value="high">5+ Complaints</SelectItem>
+        </SelectContent>
+      </Select>
+
+      <Select value={kycStatusFilter} onValueChange={onKycStatusChange}>
+        <SelectTrigger className="w-40">
+          <SelectValue placeholder="KYC Status" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All KYC Status</SelectItem>
+          <SelectItem value="pending">Pending</SelectItem>
+          <SelectItem value="verified">Verified</SelectItem>
+          <SelectItem value="rejected">Rejected</SelectItem>
+          <SelectItem value="none">No KYC</SelectItem>
         </SelectContent>
       </Select>
 
