@@ -9,11 +9,14 @@ import {
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
 
 const DashboardSidebarFooter: React.FC = () => {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await signOut();
     navigate('/');
   };
 

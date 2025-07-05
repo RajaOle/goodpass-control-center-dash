@@ -6,6 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { DEFAULT_ADMIN_CREDENTIALS } from '@/lib/supabase';
 
 const Login = () => {
   const [emailOrUsername, setEmailOrUsername] = useState('');
@@ -16,21 +18,37 @@ const Login = () => {
   const [resetEmail, setResetEmail] = useState('');
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { signIn } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      console.log('Login attempt:', { emailOrUsername, password });
+    try {
+      const { error } = await signIn(emailOrUsername, password);
+      
+      if (error) {
+        toast({
+          title: "Login Failed",
+          description: error.message || "Invalid credentials. Please try again.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Login Successful",
+          description: "Welcome to Goodpass Backoffice",
+        });
+        navigate('/dashboard');
+      }
+    } catch (error) {
       toast({
-        title: "Login Successful",
-        description: "Welcome to Goodpass Backoffice",
+        title: "Login Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
       });
+    } finally {
       setIsLoading(false);
-      navigate('/dashboard');
-    }, 1500);
+    }
   };
 
   const handleResetPassword = async (e: React.FormEvent) => {
@@ -187,6 +205,27 @@ const Login = () => {
               disabled={isLoading}
             >
               {isLoading ? 'Signing in...' : 'Sign In'}
+            </Button>
+            
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white px-2 text-gray-500">Or</span>
+              </div>
+            </div>
+            
+            <Button 
+              type="button"
+              variant="outline"
+              className="w-full h-12"
+              onClick={() => {
+                setEmailOrUsername(DEFAULT_ADMIN_CREDENTIALS.email);
+                setPassword(DEFAULT_ADMIN_CREDENTIALS.password);
+              }}
+            >
+              Use Default Admin
             </Button>
           </form>
         </CardContent>

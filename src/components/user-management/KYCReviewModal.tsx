@@ -1,72 +1,99 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent } from '@/components/ui/card';
-import { Eye, Download, CheckCircle, XCircle, Clock } from 'lucide-react';
-
-interface KYCDocument {
-  name: string;
-  url: string;
-  type: string;
-}
-
-interface UserData {
-  id: string;
-  name: string;
-  email: string;
-  kycStatus?: 'pending' | 'verified' | 'rejected';
-  kycDocuments?: KYCDocument[];
-}
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CheckCircle, XCircle, Clock, FileText, Image, Download } from 'lucide-react';
+import { kycService } from '@/services/kycService';
+import { useToast } from '@/hooks/use-toast';
 
 interface KYCReviewModalProps {
   isOpen: boolean;
   onClose: () => void;
-  user: UserData | null;
-  onApprove: (userId: string, notes?: string) => void;
-  onReject: (userId: string, reason: string) => void;
+  kycData: {
+    user: {
+      id: string;
+      phone: string;
+      role: string;
+      status: string;
+      is_kyc_completed: boolean;
+      created_at: string;
+    };
+    kyc: {
+      id: number;
+      user_id: string;
+      kyc_status: 'pending' | 'verified' | 'rejected';
+      kyc_data: any;
+      created_at: string;
+      verified_at?: string;
+    };
+    documents: {
+      id: number;
+      description: string;
+      file_url: string;
+      file_type: string;
+      file_size: number;
+      uploaded_at: string;
+      uploaded_by: string;
+      is_deleted: boolean;
+    }[];
+  };
+  onApprove: (userId: string, notes?: string) => Promise<void>;
+  onReject: (userId: string, reason: string) => Promise<void>;
 }
 
-export const KYCReviewModal: React.FC<KYCReviewModalProps> = ({
+const KYCReviewModal: React.FC<KYCReviewModalProps> = ({
   isOpen,
   onClose,
-  user,
+  kycData,
   onApprove,
   onReject
 }) => {
-  const [rejectionReason, setRejectionReason] = useState('');
+  const [activeTab, setActiveTab] = useState('documents');
+  const [loading, setLoading] = useState(false);
   const [approvalNotes, setApprovalNotes] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [showRejectionForm, setShowRejectionForm] = useState(false);
+
+  const { toast } = useToast();
 
   const handleApprove = async () => {
-    if (!user) return;
-    setIsProcessing(true);
     try {
-      await onApprove(user.id, approvalNotes);
-      onClose();
+      setLoading(true);
+      await onApprove(kycData.user.id, approvalNotes);
+      setApprovalNotes('');
     } catch (error) {
       console.error('Error approving KYC:', error);
     } finally {
-      setIsProcessing(false);
+      setLoading(false);
     }
   };
 
   const handleReject = async () => {
-    if (!user || !rejectionReason.trim()) return;
-    setIsProcessing(true);
+    if (!rejectionReason.trim()) {
+      toast({
+        title: "Error",
+        description: "Please provide a rejection reason",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
-      await onReject(user.id, rejectionReason);
-      onClose();
+      setLoading(true);
+      await onReject(kycData.user.id, rejectionReason);
+      setRejectionReason('');
+      setShowRejectionForm(false);
     } catch (error) {
       console.error('Error rejecting KYC:', error);
     } finally {
-      setIsProcessing(false);
+      setLoading(false);
     }
   };
 
-  const getStatusIcon = (status?: string) => {
+  const getStatusIcon = (status: string) => {
     switch (status) {
       case 'verified':
         return <CheckCircle className="h-4 w-4 text-green-600" />;
@@ -75,171 +102,252 @@ export const KYCReviewModal: React.FC<KYCReviewModalProps> = ({
       case 'pending':
         return <Clock className="h-4 w-4 text-yellow-600" />;
       default:
-        return <Clock className="h-4 w-4 text-gray-400" />;
+        return <Clock className="h-4 w-4 text-gray-600" />;
     }
   };
 
-  const getStatusBadgeVariant = (status?: string) => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
       case 'verified':
-        return 'default';
+        return <Badge className="bg-green-100 text-green-800">Verified</Badge>;
       case 'rejected':
-        return 'destructive';
+        return <Badge className="bg-red-100 text-red-800">Rejected</Badge>;
       case 'pending':
-        return 'secondary';
+        return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
       default:
-        return 'outline';
+        return <Badge variant="secondary">Unknown</Badge>;
     }
   };
 
-  if (!user) return null;
+  const downloadDocument = async (document: any) => {
+    try {
+      const url = await kycService.getDocumentUrl(document.file_url);
+      if (url) {
+        window.open(url, '_blank');
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to get document URL",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to download document",
+        variant: "destructive"
+      });
+    }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            KYC Review - {user.name}
-            {getStatusIcon(user.kycStatus)}
+            KYC Review - {kycData.user.phone}
+            {getStatusIcon(kycData.kyc.kyc_status)}
           </DialogTitle>
           <DialogDescription>
-            Review KYC documents for {user.email}
+            Review KYC documents and verification data
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* User Information */}
+          {/* User Info */}
           <Card>
-            <CardContent className="pt-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-medium text-gray-600">User ID</Label>
-                  <p className="text-sm">{user.id}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-600">KYC Status</Label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Badge variant={getStatusBadgeVariant(user.kycStatus)}>
-                      {user.kycStatus ? user.kycStatus.charAt(0).toUpperCase() + user.kycStatus.slice(1) : 'Not Submitted'}
-                    </Badge>
-                  </div>
+            <CardHeader>
+              <CardTitle>User Information</CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-gray-500">Phone</label>
+                <p>{kycData.user.phone}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">User ID</label>
+                <p className="text-sm">{kycData.user.id}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">Role</label>
+                <p className="capitalize">{kycData.user.role}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">KYC Status</label>
+                <div className="flex items-center gap-2">
+                  {getStatusBadge(kycData.kyc.kyc_status)}
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* KYC Documents */}
-          <Card>
-            <CardContent className="pt-6">
-              <h3 className="text-lg font-semibold mb-4">Submitted Documents</h3>
-              {user.kycDocuments && user.kycDocuments.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {user.kycDocuments.map((doc, index) => (
-                    <div key={index} className="border rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium text-sm">{doc.name}</h4>
-                        <div className="flex gap-2">
+          {/* KYC Data and Documents */}
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="documents">Documents</TabsTrigger>
+              <TabsTrigger value="kyc-data">KYC Data</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="documents" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Supporting Documents</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {kycData.documents.length === 0 ? (
+                    <p className="text-gray-500">No documents uploaded</p>
+                  ) : (
+                    <div className="grid gap-4">
+                      {kycData.documents.map((doc) => (
+                        <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg">
+                          <div className="flex items-center gap-3">
+                            {doc.file_type.startsWith('image/') ? (
+                              <Image className="h-8 w-8 text-blue-600" />
+                            ) : (
+                              <FileText className="h-8 w-8 text-gray-600" />
+                            )}
+                            <div>
+                              <p className="font-medium">{doc.description || 'Document'}</p>
+                              <p className="text-sm text-gray-500">
+                                {doc.file_type} • {(doc.file_size / 1024 / 1024).toFixed(2)} MB
+                              </p>
+                              <p className="text-sm text-gray-500">
+                                Uploaded: {new Date(doc.uploaded_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
                           <Button
-                            size="sm"
                             variant="outline"
-                            onClick={() => window.open(doc.url, '_blank')}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
                             size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              const link = document.createElement('a');
-                              link.href = doc.url;
-                              link.download = doc.name;
-                              link.click();
-                            }}
+                            onClick={() => downloadDocument(doc)}
                           >
-                            <Download className="h-4 w-4" />
+                            <Download className="h-4 w-4 mr-2" />
+                            View
                           </Button>
                         </div>
-                      </div>
-                      <div className="aspect-video bg-gray-100 rounded border flex items-center justify-center">
-                        {doc.type === 'image' ? (
-                          <img
-                            src={doc.url}
-                            alt={doc.name}
-                            className="max-w-full max-h-full object-contain"
-                          />
-                        ) : (
-                          <div className="text-gray-500 text-sm">Document Preview</div>
-                        )}
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="kyc-data" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>KYC Verification Data</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Status</label>
+                      <div className="flex items-center gap-2 mt-1">
+                        {getStatusBadge(kycData.kyc.kyc_status)}
                       </div>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  <p>No documents submitted</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Submitted</label>
+                      <p>{new Date(kycData.kyc.created_at).toLocaleString()}</p>
+                    </div>
+                    {kycData.kyc.verified_at && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-500">Verified</label>
+                        <p>{new Date(kycData.kyc.verified_at).toLocaleString()}</p>
+                      </div>
+                    )}
+                    {kycData.kyc.kyc_data && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-500">Additional Data</label>
+                        <pre className="mt-1 p-2 bg-gray-100 rounded text-sm overflow-auto">
+                          {JSON.stringify(kycData.kyc.kyc_data, null, 2)}
+                        </pre>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
 
-          {/* Review Actions */}
-          {user.kycStatus === 'pending' && (
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="approval-notes" className="text-sm font-medium">
-                  Approval Notes (Optional)
-                </Label>
-                <Textarea
-                  id="approval-notes"
-                  placeholder="Add any notes about the approval..."
-                  value={approvalNotes}
-                  onChange={(e) => setApprovalNotes(e.target.value)}
-                  className="mt-1"
-                  rows={3}
-                />
-              </div>
+          {/* Action Buttons */}
+          {kycData.kyc.kyc_status === 'pending' && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Review Actions</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {!showRejectionForm ? (
+                  <div className="flex gap-4">
+                    <div className="flex-1">
+                      <label className="text-sm font-medium text-gray-500">Approval Notes (Optional)</label>
+                      <Textarea
+                        value={approvalNotes}
+                        onChange={(e) => setApprovalNotes(e.target.value)}
+                        placeholder="Add any notes about the approval..."
+                        className="mt-1"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex-1">
+                    <label className="text-sm font-medium text-gray-500">Rejection Reason *</label>
+                    <Textarea
+                      value={rejectionReason}
+                      onChange={(e) => setRejectionReason(e.target.value)}
+                      placeholder="Please provide a reason for rejection..."
+                      className="mt-1"
+                      required
+                    />
+                  </div>
+                )}
 
-              <div>
-                <Label htmlFor="rejection-reason" className="text-sm font-medium">
-                  Rejection Reason (Required for rejection)
-                </Label>
-                <Textarea
-                  id="rejection-reason"
-                  placeholder="Please provide a reason for rejection..."
-                  value={rejectionReason}
-                  onChange={(e) => setRejectionReason(e.target.value)}
-                  className="mt-1"
-                  rows={3}
-                />
-              </div>
-            </div>
+                <div className="flex gap-4">
+                  {!showRejectionForm ? (
+                    <>
+                      <Button
+                        onClick={handleApprove}
+                        disabled={loading}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Approve KYC
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowRejectionForm(true)}
+                        disabled={loading}
+                      >
+                        <XCircle className="h-4 w-4 mr-2" />
+                        Reject KYC
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button
+                        onClick={handleReject}
+                        disabled={loading || !rejectionReason.trim()}
+                        variant="destructive"
+                      >
+                        <XCircle className="h-4 w-4 mr-2" />
+                        Confirm Rejection
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowRejectionForm(false)}
+                        disabled={loading}
+                      >
+                        Cancel
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           )}
         </div>
-
-        <DialogFooter className="flex gap-2">
-          <Button variant="outline" onClick={onClose} disabled={isProcessing}>
-            Cancel
-          </Button>
-          {user.kycStatus === 'pending' && (
-            <>
-              <Button
-                variant="destructive"
-                onClick={handleReject}
-                disabled={isProcessing || !rejectionReason.trim()}
-              >
-                Reject KYC
-              </Button>
-              <Button
-                onClick={handleApprove}
-                disabled={isProcessing}
-                className="bg-green-600 hover:bg-green-700"
-              >
-                Approve KYC
-              </Button>
-            </>
-          )}
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
-}; 
+};
+
+export default KYCReviewModal; 
