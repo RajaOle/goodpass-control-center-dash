@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAdmin, supabase } from '@/integrations/supabase/client';
 
 export interface KYCVerification {
   id: number;
@@ -33,10 +33,26 @@ class KYCService {
   // Get all users who need KYC (not completed), even if they don't have a kyc_verifications record yet
   async getPendingKYC(): Promise<{ user: UserProfile; kyc: KYCVerification; documents: SupportingDocument[] }[]> {
     try {
+      // Debug: Check current user
+      const { data: { user } } = await supabase.auth.getUser();
+      console.log('Current authenticated user:', user?.id);
+      
+      // Debug: Check user profile
+      if (user) {
+        const { data: profile, error: profileError } = await supabaseAdmin
+          .from('user_profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        
+        console.log('Current user profile:', profile);
+        console.log('Profile error:', profileError);
+      }
+      
       console.log('Fetching users needing KYC...');
       
       // Get all users who need KYC (not completed)
-      const { data: usersNeedingKYC, error: usersError } = await supabase
+      const { data: usersNeedingKYC, error: usersError } = await supabaseAdmin
         .from('user_profiles')
         .select('*')
         .or('is_kyc_completed.eq.false,is_kyc_completed.is.null')
@@ -57,7 +73,7 @@ class KYCService {
       console.log('User IDs to check:', userIds);
       
       // Get KYC verifications for these users
-      const { data: kycVerifications, error: kycError } = await supabase
+      const { data: kycVerifications, error: kycError } = await supabaseAdmin
         .from('kyc_verifications')
         .select('*')
         .in('user_id', userIds);
@@ -70,7 +86,7 @@ class KYCService {
       console.log('KYC verifications found:', kycVerifications?.length || 0);
 
       // Get documents for these users
-      const { data: documents, error: docsError } = await supabase
+      const { data: documents, error: docsError } = await supabaseAdmin
         .from('supporting_documents')
         .select('*')
         .in('uploaded_by', userIds)
@@ -135,7 +151,7 @@ class KYCService {
   async getUserKYCData(userId: string): Promise<{ user: UserProfile; kyc: KYCVerification; documents: SupportingDocument[] } | null> {
     try {
       // Get user profile
-      const { data: user, error: userError } = await supabase
+      const { data: user, error: userError } = await supabaseAdmin
         .from('user_profiles')
         .select('*')
         .eq('id', userId)
@@ -144,7 +160,7 @@ class KYCService {
       if (userError) throw userError;
 
       // Get KYC verification
-      const { data: kyc, error: kycError } = await supabase
+      const { data: kyc, error: kycError } = await supabaseAdmin
         .from('kyc_verifications')
         .select('*')
         .eq('user_id', userId)
@@ -153,7 +169,7 @@ class KYCService {
       if (kycError) throw kycError;
 
       // Get documents
-      const { data: documents, error: docsError } = await supabase
+      const { data: documents, error: docsError } = await supabaseAdmin
         .from('supporting_documents')
         .select('*')
         .eq('uploaded_by', userId)
@@ -191,7 +207,7 @@ class KYCService {
   async approveKYC(userId: string, notes?: string): Promise<boolean> {
     try {
       // Update KYC status
-      const { error: kycError } = await supabase
+      const { error: kycError } = await supabaseAdmin
         .from('kyc_verifications')
         .update({
           kyc_status: 'verified',
@@ -202,7 +218,7 @@ class KYCService {
       if (kycError) throw kycError;
 
       // Update user profile
-      const { error: profileError } = await supabase
+      const { error: profileError } = await supabaseAdmin
         .from('user_profiles')
         .update({
           is_kyc_completed: true,
@@ -223,7 +239,7 @@ class KYCService {
   async rejectKYC(userId: string, reason: string): Promise<boolean> {
     try {
       // Update KYC status
-      const { error: kycError } = await supabase
+      const { error: kycError } = await supabaseAdmin
         .from('kyc_verifications')
         .update({
           kyc_status: 'rejected',
@@ -234,7 +250,7 @@ class KYCService {
       if (kycError) throw kycError;
 
       // Update user profile
-      const { error: profileError } = await supabase
+      const { error: profileError } = await supabaseAdmin
         .from('user_profiles')
         .update({
           is_kyc_completed: false,

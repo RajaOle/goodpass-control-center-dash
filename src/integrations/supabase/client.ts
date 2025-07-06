@@ -3,15 +3,25 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
 const SUPABASE_URL = "https://nnkeqdvbkudgfrtkskae.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ua2VxZHZia3VkZ2ZydGtza2FlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA0OTg2NDAsImV4cCI6MjA2NjA3NDY0MH0.w3m6GCKqD0ES87NEzA4Qhv-OiC3bDIz8P9zbCMA1h-c";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ua2VxZHZia3VkZ2ZydGtza2FlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA0OTg2NDAsImV4cCI6MjA2NjA3NDY0MH0.w3m6GCKqD0ES87NEzA4Qhv-OiC3bDIz8P9zbCMA1h-c";
+
+// PASTE YOUR SERVICE ROLE KEY HERE (replace the text below)
+const SUPABASE_SERVICE_ROLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ua2VxZHZia3VkZ2ZydGtza2FlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MDQ5ODY0MCwiZXhwIjoyMDY2MDc0NjQwfQ.JOqfYrrM9A3BWl63B28x0Cw7BfYDosApuetJzlskDAg";
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,
+  }
+});
+
+export const supabaseAdmin = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
   }
 });

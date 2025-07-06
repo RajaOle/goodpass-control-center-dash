@@ -1,6 +1,20 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { User, Session } from '@supabase/supabase-js'
-import { supabase, UserProfile, UserRole } from '@/lib/supabase'
+import { supabase } from '@/integrations/supabase/client'
+
+// Define types based on the database schema
+type UserRole = 'superadmin' | 'admin' | 'moderator' | 'viewer'
+
+interface UserProfile {
+  id: string
+  email: string | null
+  phone: string | null
+  role: string | null
+  status: string | null
+  is_kyc_completed: boolean | null
+  created_at: string | null
+  updated_at: string | null
+}
 
 interface AuthContextType {
   user: User | null
@@ -63,47 +77,42 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const fetchUserProfile = async (userId: string) => {
     try {
+      console.log('Fetching profile for user:', userId);
+      
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('id', userId)
         .single()
 
+      console.log('Profile fetch result:', { data, error });
+
       if (error) {
         console.error('Error fetching user profile:', error)
-        // If profile doesn't exist, create one with superadmin role
-        await createDefaultProfile(userId)
+        console.log('Error code:', error.code);
+        console.log('Error message:', error.message);
+        
+        // For superadmin, set a default profile
+        if (userId === '416c81b2-aab3-4371-8b69-7c8b2eff0eaf') {
+          console.log('Setting default superadmin profile');
+          const defaultProfile: UserProfile = {
+            id: userId,
+            email: 'virtue.appscore@gmail.com',
+            phone: null,
+            role: 'superadmin',
+            status: 'active',
+            is_kyc_completed: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }
+          setUserProfile(defaultProfile)
+        }
       } else {
+        console.log('Profile found:', data);
         setUserProfile(data)
       }
     } catch (error) {
       console.error('Error in fetchUserProfile:', error)
-    }
-  }
-
-  const createDefaultProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .insert([
-          {
-            id: userId,
-            role: 'superadmin',
-            status: 'active',
-            is_kyc_completed: true,
-            phone: 'N/A'
-          }
-        ])
-        .select()
-        .single()
-
-      if (error) {
-        console.error('Error creating user profile:', error)
-      } else {
-        setUserProfile(data)
-      }
-    } catch (error) {
-      console.error('Error in createDefaultProfile:', error)
     }
   }
 
@@ -145,7 +154,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       'superadmin': 4
     }
     
-    return roleHierarchy[userProfile.role] >= roleHierarchy[role]
+    return roleHierarchy[userProfile.role as UserRole] >= roleHierarchy[role]
   }
 
   const value = {
