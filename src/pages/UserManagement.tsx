@@ -30,12 +30,15 @@ const UserManagement = () => {
   const loadPendingKYC = async () => {
     try {
       setLoading(true);
+      console.log('Loading pending KYC data...');
       const data = await kycService.getPendingKYC();
+      console.log('Loaded KYC data:', data);
       setKycData(data);
     } catch (error) {
+      console.error('Failed to load KYC data:', error);
       toast({
         title: "Error",
-        description: "Failed to load KYC data",
+        description: "Failed to load KYC data: " + (error as Error).message,
         variant: "destructive"
       });
     } finally {
@@ -141,6 +144,26 @@ const UserManagement = () => {
             {kycData.length} KYC verification{kycData.length !== 1 ? 's' : ''} awaiting review
           </CardDescription>
         </CardHeader>
+        <CardContent>
+          {/* Debug info for troubleshooting */}
+          <div className="text-sm text-gray-500 mb-4">
+            <p>Debug: Found {kycData.length} records</p>
+            {kycData.length > 0 && (
+              <details className="mt-2">
+                <summary className="cursor-pointer">View raw data</summary>
+                <pre className="mt-2 text-xs bg-gray-100 p-2 rounded overflow-auto max-h-32">
+                  {JSON.stringify(kycData.map(item => ({
+                    userId: item.user.id,
+                    phone: item.user.phone,
+                    status: item.user.status,
+                    kycStatus: item.kyc.kyc_status,
+                    documentsCount: item.documents.length
+                  })), null, 2)}
+                </pre>
+              </details>
+            )}
+          </div>
+        </CardContent>
       </Card>
 
       {/* KYC Table */}

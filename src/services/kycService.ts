@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface KYCVerification {
   id: number;
@@ -33,6 +33,8 @@ class KYCService {
   // Get all users who need KYC (not completed), even if they don't have a kyc_verifications record yet
   async getPendingKYC(): Promise<{ user: UserProfile; kyc: KYCVerification; documents: SupportingDocument[] }[]> {
     try {
+      console.log('Fetching users needing KYC...');
+      
       // Get all users who need KYC (not completed)
       const { data: usersNeedingKYC, error: usersError } = await supabase
         .from('user_profiles')
@@ -45,11 +47,14 @@ class KYCService {
         throw usersError;
       }
 
+      console.log('Users needing KYC found:', usersNeedingKYC?.length || 0);
+      
       if (!usersNeedingKYC || usersNeedingKYC.length === 0) {
         return [];
       }
 
       const userIds = usersNeedingKYC.map(u => u.id);
+      console.log('User IDs to check:', userIds);
       
       // Get KYC verifications for these users
       const { data: kycVerifications, error: kycError } = await supabase
@@ -61,6 +66,8 @@ class KYCService {
         console.error('Error fetching KYC verifications:', kycError);
         throw kycError;
       }
+
+      console.log('KYC verifications found:', kycVerifications?.length || 0);
 
       // Get documents for these users
       const { data: documents, error: docsError } = await supabase
@@ -74,28 +81,49 @@ class KYCService {
         throw docsError;
       }
 
+      console.log('Documents found:', documents?.length || 0);
+
       // Combine the data - include users even if they don't have KYC records yet
       const result = usersNeedingKYC.map(user => {
         const kyc = kycVerifications?.find(k => k.user_id === user.id);
         const userDocs = documents?.filter(d => d.uploaded_by === user.id) || [];
         
+        console.log(`Processing user ${user.id}: KYC found=${!!kyc}, Documents count=${userDocs.length}`);
+        
         // If no KYC record exists, create a placeholder
-        const kycRecord = kyc || {
+        const kycRecord: KYCVerification = kyc ? {
+          id: kyc.id,
+          user_id: kyc.user_id,
+          kyc_status: (kyc.kyc_status as 'pending' | 'verified' | 'rejected') || 'pending',
+          kyc_data: kyc.kyc_data,
+          created_at: kyc.created_at || '',
+          verified_at: kyc.verified_at || undefined
+        } : {
           id: 0,
           user_id: user.id,
           kyc_status: 'pending' as const,
           kyc_data: null,
-          created_at: user.created_at,
-          verified_at: null
+          created_at: user.created_at || '',
+          verified_at: undefined
+        };
+        
+        const userProfile: UserProfile = {
+          id: user.id,
+          phone: user.phone || '',
+          role: user.role || 'user',
+          status: user.status || 'active',
+          is_kyc_completed: user.is_kyc_completed || false,
+          created_at: user.created_at || ''
         };
         
         return {
-          user,
+          user: userProfile,
           kyc: kycRecord,
-          documents: userDocs
+          documents: userDocs as SupportingDocument[]
         };
       });
 
+      console.log('Final result count:', result.length);
       return result;
     } catch (error) {
       console.error('Error fetching pending KYC:', error);
@@ -135,9 +163,23 @@ class KYCService {
       if (docsError) throw docsError;
 
       return {
-        user,
-        kyc,
-        documents: documents || []
+        user: {
+          id: user.id,
+          phone: user.phone || '',
+          role: user.role || 'user', 
+          status: user.status || 'active',
+          is_kyc_completed: user.is_kyc_completed || false,
+          created_at: user.created_at || ''
+        } as UserProfile,
+        kyc: {
+          id: kyc.id,
+          user_id: kyc.user_id,
+          kyc_status: (kyc.kyc_status as 'pending' | 'verified' | 'rejected') || 'pending',
+          kyc_data: kyc.kyc_data,
+          created_at: kyc.created_at || '',
+          verified_at: kyc.verified_at || undefined
+        } as KYCVerification,
+        documents: (documents || []) as SupportingDocument[]
       };
     } catch (error) {
       console.error('Error fetching user KYC data:', error);
