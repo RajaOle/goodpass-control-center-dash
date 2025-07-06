@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { FileViewer } from '@/components/ui/file-viewer';
 import { CheckCircle, XCircle, Clock, FileText, Image, Download } from 'lucide-react';
 import { kycService } from '@/services/kycService';
 import { useToast } from '@/hooks/use-toast';
@@ -56,8 +57,26 @@ const KYCReviewModal: React.FC<KYCReviewModalProps> = ({
   const [approvalNotes, setApprovalNotes] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
   const [showRejectionForm, setShowRejectionForm] = useState(false);
+  const [signedUrl, setSignedUrl] = useState<string | null>(null);
 
   const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchSignedUrl = async () => {
+      if (kycData.kyc.kyc_data?.fileUrl) {
+        let filePath = kycData.kyc.kyc_data.fileUrl;
+        const match = filePath.match(/kyc-document\/(.*)$/);
+        if (match && match[1]) {
+          filePath = match[1];
+        }
+        const url = await kycService.getDocumentUrl(filePath);
+        setSignedUrl(url);
+      } else {
+        setSignedUrl(null);
+      }
+    };
+    fetchSignedUrl();
+  }, [kycData.kyc.kyc_data?.fileUrl]);
 
   const handleApprove = async () => {
     try {
@@ -140,16 +159,31 @@ const KYCReviewModal: React.FC<KYCReviewModalProps> = ({
     }
   };
 
+  console.log("kycData.kyc.kyc_data", kycData.kyc.kyc_data);
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent
+        className="
+          w-full
+          max-w-[95vw]
+          sm:max-w-2xl
+          md:max-w-3xl
+          lg:max-w-4xl
+          max-h-[90vh]
+          overflow-y-auto
+          p-4
+          sm:p-8
+          rounded-lg
+        "
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             KYC Review - {kycData.user.phone}
             {getStatusIcon(kycData.kyc.kyc_status)}
           </DialogTitle>
           <DialogDescription>
-            Review KYC documents and verification data
+            Review submitted KYC document and verification data
           </DialogDescription>
         </DialogHeader>
 
@@ -181,93 +215,62 @@ const KYCReviewModal: React.FC<KYCReviewModalProps> = ({
             </CardContent>
           </Card>
 
-          {/* KYC Data and Documents */}
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="documents">Documents</TabsTrigger>
-              <TabsTrigger value="kyc-data">KYC Data</TabsTrigger>
-            </TabsList>
+          {/* KYC Document Preview */}
+          <Card>
+            <CardHeader>
+              <CardTitle>KYC Document Preview</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {signedUrl || kycData.kyc.kyc_data.fileUrl ? (
+                <FileViewer
+                  fileUrl={signedUrl || kycData.kyc.kyc_data.fileUrl}
+                  fileName={kycData.kyc.kyc_data.fileName}
+                  fileType={kycData.kyc.kyc_data.fileType}
+                  fileSize={kycData.kyc.kyc_data.fileSize}
+                />
+              ) : (
+                <div className="text-center py-8">
+                  <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500">No KYC document submitted.</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-            <TabsContent value="documents" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Supporting Documents</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {kycData.documents.length === 0 ? (
-                    <p className="text-gray-500">No documents uploaded</p>
-                  ) : (
-                    <div className="grid gap-4">
-                      {kycData.documents.map((doc) => (
-                        <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg">
-                          <div className="flex items-center gap-3">
-                            {doc.file_type.startsWith('image/') ? (
-                              <Image className="h-8 w-8 text-blue-600" />
-                            ) : (
-                              <FileText className="h-8 w-8 text-gray-600" />
-                            )}
-                            <div>
-                              <p className="font-medium">{doc.description || 'Document'}</p>
-                              <p className="text-sm text-gray-500">
-                                {doc.file_type} • {(doc.file_size / 1024 / 1024).toFixed(2)} MB
-                              </p>
-                              <p className="text-sm text-gray-500">
-                                Uploaded: {new Date(doc.uploaded_at).toLocaleDateString()}
-                              </p>
-                            </div>
-                          </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => downloadDocument(doc)}
-                          >
-                            <Download className="h-4 w-4 mr-2" />
-                            View
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="kyc-data" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>KYC Verification Data</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-sm font-medium text-gray-500">Status</label>
-                      <div className="flex items-center gap-2 mt-1">
-                        {getStatusBadge(kycData.kyc.kyc_status)}
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-500">Submitted</label>
-                      <p>{new Date(kycData.kyc.created_at).toLocaleString()}</p>
-                    </div>
-                    {kycData.kyc.verified_at && (
-                      <div>
-                        <label className="text-sm font-medium text-gray-500">Verified</label>
-                        <p>{new Date(kycData.kyc.verified_at).toLocaleString()}</p>
-                      </div>
-                    )}
-                    {kycData.kyc.kyc_data && (
-                      <div>
-                        <label className="text-sm font-medium text-gray-500">Additional Data</label>
-                        <pre className="mt-1 p-2 bg-gray-100 rounded text-sm overflow-auto">
-                          {JSON.stringify(kycData.kyc.kyc_data, null, 2)}
-                        </pre>
-                      </div>
-                    )}
+          {/* KYC Data */}
+          <Card>
+            <CardHeader>
+              <CardTitle>KYC Verification Data</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Status</label>
+                  <div className="flex items-center gap-2 mt-1">
+                    {getStatusBadge(kycData.kyc.kyc_status)}
                   </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Submitted</label>
+                  <p>{new Date(kycData.kyc.created_at).toLocaleString()}</p>
+                </div>
+                {kycData.kyc.verified_at && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Verified</label>
+                    <p>{new Date(kycData.kyc.verified_at).toLocaleString()}</p>
+                  </div>
+                )}
+                {kycData.kyc.kyc_data && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Additional Data</label>
+                    <pre className="mt-1 p-2 bg-gray-100 rounded text-sm overflow-auto">
+                      {JSON.stringify(kycData.kyc.kyc_data, null, 2)}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Action Buttons */}
           {kycData.kyc.kyc_status === 'pending' && (
