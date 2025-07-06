@@ -22,6 +22,7 @@ export interface SupportingDocument {
 
 export interface UserProfile {
   id: string;
+  email: string;
   phone: string;
   role: string;
   status: string;
@@ -125,6 +126,7 @@ class KYCService {
         
         const userProfile: UserProfile = {
           id: user.id,
+          email: user.email || '',
           phone: user.phone || '',
           role: user.role || 'user',
           status: user.status || 'active',
@@ -181,6 +183,7 @@ class KYCService {
       return {
         user: {
           id: user.id,
+          email: user.email || '',
           phone: user.phone || '',
           role: user.role || 'user', 
           status: user.status || 'active',
